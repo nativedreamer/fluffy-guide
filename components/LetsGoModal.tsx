@@ -33,22 +33,22 @@ export const LetsGoModal: React.FC<LetsGoModalProps> = ({
 
   const handleStartWorkflow = () => {
     setIsProcessing(true);
-    setProgressStep('Step 1: Searching global fixtures across worldwide leagues...');
+    setProgressStep('Step 1: Reading upcoming fixtures from the ESPN feed...');
     
     setTimeout(() => {
-      setProgressStep('Step 2: Collecting recent form, xG, home/away splits & player availability...');
+      setProgressStep('Step 2: Checking date, kickoff time, sport scope, and fixture status...');
     }, 400);
 
     setTimeout(() => {
-      setProgressStep('Step 3: Applying strict Section 8 risk filter & removing high uncertainty...');
+      setProgressStep('Step 3: Applying the prompt’s evidence and data-quality filters...');
     }, 850);
 
     setTimeout(() => {
-      setProgressStep('Step 4: Auditing correlation & constructing minimum 10.00+ odds accumulator...');
+      setProgressStep('Step 4: Removing candidates without verified current statistics or odds...');
     }, 1300);
 
     setTimeout(() => {
-      setProgressStep('Step 5: Performing internal risk audit (Max 7 selections verified)...');
+      setProgressStep('Step 5: Applying the 7-selection limit and the no-result rule...');
     }, 1750);
 
     setTimeout(() => {
@@ -98,7 +98,7 @@ export const LetsGoModal: React.FC<LetsGoModalProps> = ({
                   Which sport would you like me to analyze?
                 </p>
                 <p className="text-xs text-emerald-300/70 mt-1">
-                  Global search will evaluate current fixtures, form, motivation, and statistical consistency.
+                  ESPN fixtures are checked first; unsupported selections are excluded rather than invented.
                 </p>
               </div>
 
@@ -228,7 +228,7 @@ export const LetsGoModal: React.FC<LetsGoModalProps> = ({
                 </p>
               </div>
               <p className="text-[11px] text-emerald-300/60 font-mono max-w-sm mx-auto">
-                Auditing odds movement, evaluating probability & correlation, filtering out high uncertainty.
+                Checking current fixture data, evidence quality, odds availability, and risk filters.
               </p>
             </div>
           )}

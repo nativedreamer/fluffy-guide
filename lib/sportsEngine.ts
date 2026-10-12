@@ -66,10 +66,6 @@ export function generateAccumulatorSlip(
     .filter((f) => f.recommendedSelection.confidenceScore >= 80)
     .sort((a, b) => b.recommendedSelection.confidenceScore - a.recommendedSelection.confidenceScore);
 
-  if (eligibleFixtures.length === 0) {
-    eligibleFixtures = fixtures.slice(0, 5);
-  }
-
   // Step 3-6: Construct combination reaching targetOdds with fewest selections (Max 7)
   const selectedPicks: AccumulatorSelection[] = [];
   let currentOdds = 1.0;

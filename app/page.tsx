@@ -48,6 +48,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<AnalysisCategory | 'ALL_FIXTURES'>('ALL_FIXTURES');
   const [fixturesLoading, setFixturesLoading] = useState(true);
   const [fixturesError, setFixturesError] = useState<string | null>(null);
+  const [analysisMessage, setAnalysisMessage] = useState<string | null>(null);
   const [oddsFormat, setOddsFormat] = useState<OddsFormat>('DECIMAL');
   const [selectedSport, setSelectedSport] = useState<SportType>('FOOTBALL');
   const [targetOdds, setTargetOdds] = useState<number>(10.0);
@@ -101,6 +102,11 @@ export default function App() {
     setTargetOdds(target);
     const newSlip = generateAccumulatorSlip(sport, target, fixtures);
     setSlip(newSlip);
+    setAnalysisMessage(
+      newSlip.selections.length === 0
+        ? "I couldn't identify enough sufficiently supported selections to construct a 10+ odds accumulator within the 7-selection limit. The ESPN fixture feed does not currently provide enough verified supporting statistics for a responsible pick."
+        : null
+    );
     setActiveTab('ACCUMULATOR');
   };
 
@@ -292,6 +298,14 @@ export default function App() {
         {activeTab === 'ACCUMULATOR' && (
           <ErrorBoundary>
             <div className="space-y-6">
+              {analysisMessage && (
+                <div className="bg-[#241b05] border border-amber-800 rounded-2xl p-4 sm:p-5 text-sm text-amber-100">
+                  <strong className="block text-amber-300 mb-1">Analysis result</strong>
+                  {analysisMessage}
+                  <span className="block mt-2 text-xs text-amber-200/80">No unsupported prediction was added. The live fixtures remain available in the All Matches tab.</span>
+                  <span className="block mt-3 text-xs font-mono text-amber-300">prompt by mr. Wolf</span>
+                </div>
+              )}
               <AccumulatorCard
                 slip={slip}
                 oddsFormat={oddsFormat}
