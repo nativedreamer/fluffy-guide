@@ -4,16 +4,16 @@ import { generateAccumulatorSlip, formatOdds, formatSection15Output } from '../l
 import { GLOBAL_FIXTURES } from '../lib/sportsData.ts';
 
 describe('AEE Football Group — Sports Quantitative Models', () => {
-  test('generateAccumulatorSlip reaches target odds and adheres to <= 7 selections', () => {
+  test('generateAccumulatorSlip is safe when no verified odds are available', () => {
     const slip = generateAccumulatorSlip('FOOTBALL', 10.0, GLOBAL_FIXTURES);
-    assert.ok(slip.combinedOdds >= 10.0, `Expected combined odds >= 10.0, got ${slip.combinedOdds}`);
+    assert.strictEqual(slip.combinedOdds, 1);
     assert.ok(slip.totalSelections <= 7, `Expected total selections <= 7, got ${slip.totalSelections}`);
-    assert.ok(slip.selections.length >= 3, 'Expected at least 3 high-confidence selections');
+    assert.strictEqual(slip.selections.length, 0);
   });
 
   test('generateAccumulatorSlip handles hybrid Football + Basketball', () => {
     const slip = generateAccumulatorSlip('BOTH', 10.0, GLOBAL_FIXTURES);
-    assert.ok(slip.combinedOdds >= 10.0);
+    assert.strictEqual(slip.combinedOdds, 1);
     assert.ok(slip.totalSelections <= 7);
   });
 

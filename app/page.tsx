@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   AnalysisCategory, 
   MatchFixture, 
@@ -44,16 +44,43 @@ import {
 } from 'lucide-react';
 
 export default function App() {
-  const [fixtures, setFixtures] = useState<MatchFixture[]>(GLOBAL_FIXTURES);
-  const [activeTab, setActiveTab] = useState<AnalysisCategory | 'ALL_FIXTURES'>('DAILY_TIPS');
+  const [fixtures, setFixtures] = useState<MatchFixture[]>([]);
+  const [activeTab, setActiveTab] = useState<AnalysisCategory | 'ALL_FIXTURES'>('ALL_FIXTURES');
+  const [fixturesLoading, setFixturesLoading] = useState(true);
+  const [fixturesError, setFixturesError] = useState<string | null>(null);
   const [oddsFormat, setOddsFormat] = useState<OddsFormat>('DECIMAL');
   const [selectedSport, setSelectedSport] = useState<SportType>('FOOTBALL');
   const [targetOdds, setTargetOdds] = useState<number>(10.0);
 
   // Active Accumulator Slip
   const [slip, setSlip] = useState<AccumulatorSlip>(() => {
-    return generateAccumulatorSlip('FOOTBALL', 10.0, GLOBAL_FIXTURES);
+    return generateAccumulatorSlip('FOOTBALL', 10.0, []);
   });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadFixtures() {
+      setFixturesLoading(true);
+      setFixturesError(null);
+      try {
+        const response = await fetch('/api/fixtures?days=7');
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || 'Live fixture feed unavailable');
+        if (!cancelled) setFixtures(payload.fixtures || []);
+      } catch (error) {
+        if (!cancelled) {
+          setFixtures([]);
+          setFixturesError(error instanceof Error ? error.message : 'Live fixture feed unavailable');
+        }
+      } finally {
+        if (!cancelled) setFixturesLoading(false);
+      }
+    }
+
+    loadFixtures();
+    return () => { cancelled = true; };
+  }, []);
 
   // Modals state
   const [isLetsGoOpen, setIsLetsGoOpen] = useState(false);
@@ -194,6 +221,16 @@ export default function App() {
 
       {/* Main Container */}
       <main className="max-w-7xl w-full mx-auto px-3 sm:px-6 py-5 space-y-6 flex-1">
+        {fixturesLoading && (
+          <div className="rounded-xl border border-emerald-800 bg-[#051c13] px-4 py-3 text-xs font-mono text-emerald-200">
+            Loading upcoming fixtures from the live scoreboard…
+          </div>
+        )}
+        {fixturesError && (
+          <div className="rounded-xl border border-amber-800 bg-[#241b05] px-4 py-3 text-xs font-mono text-amber-200">
+            Live fixture feed unavailable. No cached or invented fixtures are shown.
+          </div>
+        )}
         {/* Hero Quick Command Banner */}
         <div className="bg-gradient-to-r from-[#072418] via-[#0d3b2a] to-[#072418] border border-emerald-700/80 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
@@ -206,14 +243,14 @@ export default function App() {
                   LIVE QUANT ACCUMULATOR ENGINE
                 </span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-700 font-mono">
-                  Real Fixtures · Oct 2026
+                  Live Fixtures · Verified Feed
                 </span>
               </div>
               <h2 className="text-base sm:text-lg font-black text-white font-sans mt-0.5">
                 Ready for Evidence-Based Accumulator &amp; Match Analysis?
               </h2>
               <p className="text-xs text-emerald-200/80 font-mono mt-0.5">
-                Real fixtures: Liverpool v Chelsea, Bournemouth v Arsenal, Spurs v West Ham, Nations League &amp; NBA.
+                Upcoming fixtures only — fetched from ESPN and sorted by verified UTC kickoff time.
               </p>
             </div>
           </div>

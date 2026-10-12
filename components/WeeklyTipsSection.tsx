@@ -57,7 +57,7 @@ export const WeeklyTipsSection: React.FC<WeeklyTipsSectionProps> = ({
               Weekly Mega Slates &amp; Premier League Specials
             </h2>
             <p className="text-xs text-emerald-200/80 font-mono mt-0.5">
-              Featuring accurate upcoming blockbuster fixtures: Liverpool v Chelsea, Bournemouth v Arsenal, Spurs v West Ham.
+              Fixture analysis is shown only when a live verified data source provides the required odds and statistics.
             </p>
           </div>
         </div>

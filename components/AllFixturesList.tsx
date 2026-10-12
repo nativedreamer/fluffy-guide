@@ -21,6 +21,8 @@ export const AllFixturesList: React.FC<AllFixturesListProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSportFilter, setSelectedSportFilter] = useState<'ALL' | 'Football' | 'Basketball'>('ALL');
   const [selectedDayFilter, setSelectedDayFilter] = useState<'ALL' | 'TODAY' | 'WEEKEND'>('ALL');
+  const [selectedDateFilter, setSelectedDateFilter] = useState('ALL');
+  const [selectedTimeFilter, setSelectedTimeFilter] = useState<'ALL' | 'MORNING' | 'AFTERNOON' | 'EVENING'>('ALL');
   const [selectedLeagueFilter, setSelectedLeagueFilter] = useState<string>('ALL');
 
   // Unique leagues
@@ -29,11 +31,20 @@ export const AllFixturesList: React.FC<AllFixturesListProps> = ({
     return ['ALL', ...list];
   }, [fixtures]);
 
+  const dates = useMemo(() => ['ALL', ...Array.from(new Set(fixtures.map(f => f.date))).sort()], [fixtures]);
+
   // Filtered list
   const filtered = useMemo(() => {
     return fixtures.filter(f => {
       if (selectedSportFilter !== 'ALL' && f.sport !== selectedSportFilter) return false;
       if (selectedDayFilter !== 'ALL' && f.dayCategory !== selectedDayFilter) return false;
+      if (selectedDateFilter !== 'ALL' && f.date !== selectedDateFilter) return false;
+      if (selectedTimeFilter !== 'ALL' && f.kickoffAt) {
+        const hour = new Date(f.kickoffAt).getUTCHours();
+        if (selectedTimeFilter === 'MORNING' && (hour < 5 || hour >= 12)) return false;
+        if (selectedTimeFilter === 'AFTERNOON' && (hour < 12 || hour >= 18)) return false;
+        if (selectedTimeFilter === 'EVENING' && !(hour >= 18 || hour < 5)) return false;
+      }
       if (selectedLeagueFilter !== 'ALL' && f.league !== selectedLeagueFilter) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
@@ -42,7 +53,7 @@ export const AllFixturesList: React.FC<AllFixturesListProps> = ({
       }
       return true;
     });
-  }, [fixtures, selectedSportFilter, selectedDayFilter, selectedLeagueFilter, searchQuery]);
+  }, [fixtures, selectedSportFilter, selectedDayFilter, selectedDateFilter, selectedTimeFilter, selectedLeagueFilter, searchQuery]);
 
   return (
     <div className="bg-[#08261b] border border-emerald-700/70 rounded-2xl shadow-xl overflow-hidden font-sans space-y-4 p-4 sm:p-6">
@@ -61,7 +72,7 @@ export const AllFixturesList: React.FC<AllFixturesListProps> = ({
         </div>
 
         {/* Filters */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar font-mono text-xs">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar font-mono text-xs">
           {/* Day Category filter */}
           <div className="flex items-center bg-[#051c13] rounded-xl p-0.5 border border-emerald-800">
             {(['ALL', 'TODAY', 'WEEKEND'] as const).map(d => (
@@ -77,6 +88,28 @@ export const AllFixturesList: React.FC<AllFixturesListProps> = ({
                 {d === 'ALL' ? 'All Dates' : d === 'TODAY' ? 'Today Live' : 'Weekend Clashes'}
               </button>
             ))}
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar font-mono text-xs">
+            <select
+              value={selectedDateFilter}
+              onChange={(e) => setSelectedDateFilter(e.target.value)}
+              className="bg-[#051c13] text-emerald-200 border border-emerald-800 rounded-xl px-3 py-1.5 focus:outline-none focus:border-amber-400"
+              aria-label="Filter fixtures by date"
+            >
+              {dates.map(date => <option key={date} value={date}>{date === 'ALL' ? 'All Dates' : date}</option>)}
+            </select>
+            <select
+              value={selectedTimeFilter}
+              onChange={(e) => setSelectedTimeFilter(e.target.value as typeof selectedTimeFilter)}
+              className="bg-[#051c13] text-emerald-200 border border-emerald-800 rounded-xl px-3 py-1.5 focus:outline-none focus:border-amber-400"
+              aria-label="Filter fixtures by kickoff time"
+            >
+              <option value="ALL">All Kickoff Times</option>
+              <option value="MORNING">Morning · 05:00–11:59 UTC</option>
+              <option value="AFTERNOON">Afternoon · 12:00–17:59 UTC</option>
+              <option value="EVENING">Evening · 18:00–04:59 UTC</option>
+            </select>
           </div>
 
           {/* Sport filter */}
@@ -116,6 +149,7 @@ export const AllFixturesList: React.FC<AllFixturesListProps> = ({
         {filtered.map(fix => {
           const inSlip = slipMatchIds.includes(fix.id);
           const isLive = fix.status === 'LIVE';
+          const canAddToSlip = fix.recommendedSelection.confidenceScore > 0;
 
           return (
             <div
@@ -180,15 +214,15 @@ export const AllFixturesList: React.FC<AllFixturesListProps> = ({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      onAddToSlip(fix);
+                      if (canAddToSlip) onAddToSlip(fix);
                     }}
-                    disabled={inSlip}
+                    disabled={inSlip || !canAddToSlip}
                     className={`p-1.5 rounded-lg transition-all ${
-                      inSlip
+                      inSlip || !canAddToSlip
                         ? 'bg-emerald-900 text-emerald-400 cursor-not-allowed'
                         : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-sm active:scale-95'
                     }`}
-                    title={inSlip ? "Already in accumulator" : "Add to accumulator slip"}
+                    title={inSlip ? "Already in accumulator" : canAddToSlip ? "Add to accumulator slip" : "No verified odds available"}
                   >
                     {inSlip ? <CheckCircle className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                   </button>

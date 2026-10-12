@@ -1,22 +1,21 @@
-# Perp Roaming - 24/7 Binance Futures Quant Radar & Paper Trading Bot
+# Fluffy Guide — Live Sports Fixture Radar
 
-A high-frequency quantitative perpetual futures radar and automated paper-trading terminal built with React 19, TypeScript, Tailwind CSS, and Vite. Configured for zero-config **Vercel** deployment.
+A React 19, TypeScript, Tailwind CSS, and Vite fixture radar configured for **Vercel** deployment. Match schedules are fetched at runtime from ESPN's public scoreboard feed; the app does not ship a hard-coded fixture list.
 
 ## 🚀 Key Features
 
-1. **Unlimited Perpetual Pairs Scanner (Dynamic Discovery):**
-   - Continuously monitors **all available perpetual / USDT pairs** on Binance without artificial pair limits.
-   - Initialized with 120+ high-liquidity perpetual pairs and dynamically pulls the entire perpetual universe, cycling round-robin 24/7.
-   - Built-in rate limiting and fallback resilience.
+1. **Verified upcoming fixtures:**
+   - Fetches scheduled events from ESPN for selected football leagues and the NBA.
+   - Filters out events whose kickoff time has passed on the server.
+   - Shows the provider, kickoff timestamp, and source link for traceability.
 
-2. **Dual Quantitative Strategies:**
-   - **Volumetric Order Blocks + EMA (Pine Script Port):** Bullish/Bearish Order Blocks detection, EMA 20/50/200 trend alignment, volume delta threshold, breaker blocks, and liquidity sweeps.
-   - **VWAP + EMA Dynamic Reversion:** Intraday volume-weighted bands, pullback triggers, and dynamic stop-loss/take-profit calculations.
+2. **Date and time filters:**
+   - Filter by exact UTC date and morning, afternoon, or evening kickoff window.
+   - Sorts results by the verified kickoff timestamp.
 
-3. **Manual Quant Analyses Studio:**
-   - Dedicated interactive deep-dive modal to inspect any perpetual symbol on demand.
-   - Quantitative scorecard: Order block zones, EMA 20/50/200 spread, VWAP deviation, RSI 14, 24h volume surge, and ATR volatility.
-   - One-click copy trade plan, instant simulated execution, or load directly into the live multi-timeframe interactive chart.
+3. **No invented picks:**
+   - Fixtures without a verified odds feed are view-only.
+   - No stale fallback fixtures are shown if the live provider is unavailable.
 
 4. **Realistic Paper Trading Simulation Engine:**
    - Real-time simulated fills, leverage selector (1x - 125x), dynamic PnL tracking, margin maintenance checks, liquidation calculations, and interactive order book.
@@ -32,7 +31,7 @@ A high-frequency quantitative perpetual futures radar and automated paper-tradin
 - **Framework:** React 19 + TypeScript + Vite 8
 - **Styling:** Tailwind CSS v4 + Framer Motion
 - **Icons:** Lucide React
-- **Data Source:** Binance Public REST API (CORS enabled with multi-node fallback)
+- **Data Source:** ESPN public scoreboard API via a Vercel serverless function
 - **Deployment:** Vercel (or static hosting)
 
 ---

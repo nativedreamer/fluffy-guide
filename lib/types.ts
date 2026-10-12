@@ -76,10 +76,13 @@ export interface MatchFixture {
   homeTeam: string;
   awayTeam: string;
   kickoffTime: string;
+  kickoffAt?: string;
   date: string; // YYYY-MM-DD
   dayCategory: DayCategory;
   scheduleType: 'DAILY' | 'WEEKLY' | 'BOTH';
   venue: string;
+  source?: string;
+  sourceUrl?: string;
   status: MatchStatus;
   liveMinute?: string;
   liveScore?: string;
