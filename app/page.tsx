@@ -104,7 +104,7 @@ export default function App() {
     setSlip(newSlip);
     setAnalysisMessage(
       newSlip.selections.length === 0
-        ? "I couldn't identify enough sufficiently supported selections to construct a 10+ odds accumulator within the 7-selection limit. The ESPN fixture feed does not currently provide enough verified supporting statistics for a responsible pick."
+        ? "I couldn't identify enough sufficiently supported selections to construct a responsible 10+ odds accumulator. The ESPN fixture feed does not currently provide enough verified supporting statistics for a responsible pick."
         : null
     );
     setActiveTab('ACCUMULATOR');
@@ -142,7 +142,6 @@ export default function App() {
 
   // Add fixture pick to slip manually
   const handleAddToSlip = (fix: MatchFixture) => {
-    if (slip.selections.length >= 7) return;
     if (slip.selections.some((s) => s.matchId === fix.id)) return;
 
     const newSel = {
@@ -324,7 +323,7 @@ export default function App() {
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 text-[11px] text-emerald-300/80">
                   <span className="p-2 rounded-lg bg-[#08291d] border border-emerald-900">
-                    ✓ Maximum 7 Selections Strictly Enforced
+                    ✓ Unlimited selections, evidence-filtered
                   </span>
                   <span className="p-2 rounded-lg bg-[#08291d] border border-emerald-900">
                     ✓ Combined Odds ≥ 10.00 Target Met

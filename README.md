@@ -16,6 +16,11 @@ A React 19, TypeScript, Tailwind CSS, and Vite fixture radar configured for **Ve
 3. **No invented picks:**
    - Fixtures without a verified odds feed are view-only.
    - No stale fallback fixtures are shown if the live provider is unavailable.
+   - The accumulator has no hard selection-count cap; it uses only supported, upcoming, non-duplicate fixtures.
+
+4. **Corners and bookings research panels:**
+   - Both panels now enumerate upcoming ESPN fixtures and apply the prompt's required quality gates.
+   - ESPN fields that are not available are shown as `Data unavailable` and excluded from projections rather than guessed.
 
 4. **Realistic Paper Trading Simulation Engine:**
    - Real-time simulated fills, leverage selector (1x - 125x), dynamic PnL tracking, margin maintenance checks, liquidation calculations, and interactive order book.

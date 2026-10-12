@@ -56,7 +56,7 @@ export const Header: React.FC<HeaderProps> = ({
           </span>
           <span className="hidden lg:inline text-emerald-600">|</span>
           <span className="hidden lg:inline text-slate-400">
-            Algorithm: 10.00+ Target Odds (Max 7 Selections)
+            Algorithm: 10.00+ Target Odds (Unlimited Evidence-Filtered Selections)
           </span>
         </div>
 

@@ -49,7 +49,7 @@ export const BetSlipDrawer: React.FC<BetSlipDrawerProps> = ({
             <Trophy className="w-3.5 h-3.5 text-amber-400" />
           </div>
           <span className="text-xs font-black text-white">
-            Active Slip ({selections.length}/7)
+            Active Slip ({selections.length})
           </span>
         </div>
 

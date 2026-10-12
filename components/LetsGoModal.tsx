@@ -48,7 +48,7 @@ export const LetsGoModal: React.FC<LetsGoModalProps> = ({
     }, 1300);
 
     setTimeout(() => {
-      setProgressStep('Step 5: Applying the 7-selection limit and the no-result rule...');
+      setProgressStep('Step 5: Applying evidence, duplication, and the no-result rule...');
     }, 1750);
 
     setTimeout(() => {
@@ -196,7 +196,7 @@ export const LetsGoModal: React.FC<LetsGoModalProps> = ({
                   ))}
                 </div>
                 <p className="text-[11px] text-emerald-300/60 font-mono">
-                  *Accumulator strictly filtered to maximum 7 selections using the fewest games reasonably possible.
+                  *Accumulator uses unlimited selections, but only supported and non-duplicate fixtures are eligible.
                 </p>
               </div>
 

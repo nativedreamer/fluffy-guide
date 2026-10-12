@@ -42,10 +42,10 @@ export function formatOdds(decimalOdds: number, format: OddsFormat = 'DECIMAL'):
 }
 
 /**
- * Quantitative Accumulator Generator (Steps 1 through 7)
+ * Quantitative Accumulator Generator (prompt workflow)
  * Strictly enforces:
  * - Minimum combined odds of targetOdds (default 10.00+)
- * - Maximum of 7 selections
+ * - Unlimited selections, subject to evidence and duplicate-match filters
  * - Diversified (no duplicate matches)
  * - Fewest selections reasonably possible
  */
@@ -66,13 +66,11 @@ export function generateAccumulatorSlip(
     .filter((f) => f.recommendedSelection.confidenceScore >= 80)
     .sort((a, b) => b.recommendedSelection.confidenceScore - a.recommendedSelection.confidenceScore);
 
-  // Step 3-6: Construct combination reaching targetOdds with fewest selections (Max 7)
+  // Construct the combination reaching targetOdds with the fewest supported selections.
   const selectedPicks: AccumulatorSelection[] = [];
   let currentOdds = 1.0;
 
   for (const fix of eligibleFixtures) {
-    if (selectedPicks.length >= 7) break;
-
     // Avoid duplicate match
     if (selectedPicks.some((p) => p.matchId === fix.id)) continue;
 
@@ -142,7 +140,7 @@ export function formatSection15Output(slip: AccumulatorSlip): string {
     text += `| ${num} | ${match} | ${pred} | ${odds} |\n`;
   });
 
-  text += `\nTotal Selections: ${slip.totalSelections}/7\n`;
+  text += `\nTotal Selections: ${slip.totalSelections}\n`;
   text += `Combined Odds: ${slip.combinedOdds.toFixed(2)}\n\n`;
   text += `Risk Note: ${slip.riskNote}\n\n`;
   text += `Aee football group \nprompt by mr. Wolf`;

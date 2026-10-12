@@ -44,7 +44,7 @@ export const CategoryTabs: React.FC<CategoryTabsProps> = ({
       shortLabel: '10+ Acca',
       icon: Target,
       tag: 'Section 15',
-      badge: accumulatorCount > 0 ? `${accumulatorCount}/7` : 'Ready'
+      badge: accumulatorCount > 0 ? `${accumulatorCount}` : 'Ready'
     },
     {
       id: 'CORNERS' as const,

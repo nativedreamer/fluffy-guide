@@ -7,14 +7,14 @@ describe('AEE Football Group — Sports Quantitative Models', () => {
   test('generateAccumulatorSlip is safe when no verified odds are available', () => {
     const slip = generateAccumulatorSlip('FOOTBALL', 10.0, GLOBAL_FIXTURES);
     assert.strictEqual(slip.combinedOdds, 1);
-    assert.ok(slip.totalSelections <= 7, `Expected total selections <= 7, got ${slip.totalSelections}`);
+    assert.strictEqual(slip.totalSelections, 0);
     assert.strictEqual(slip.selections.length, 0);
   });
 
   test('generateAccumulatorSlip handles hybrid Football + Basketball', () => {
     const slip = generateAccumulatorSlip('BOTH', 10.0, GLOBAL_FIXTURES);
     assert.strictEqual(slip.combinedOdds, 1);
-    assert.ok(slip.totalSelections <= 7);
+    assert.strictEqual(slip.totalSelections, 0);
   });
 
   test('formatOdds converts decimal to Fractional and American', () => {

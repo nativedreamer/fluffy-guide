@@ -147,7 +147,7 @@ export interface AccumulatorSlip {
   sport: SportType;
   targetOdds: number;
   combinedOdds: number;
-  totalSelections: number; // max 7
+  totalSelections: number;
   selections: AccumulatorSelection[];
   riskNote: string;
   bookingCode: string;

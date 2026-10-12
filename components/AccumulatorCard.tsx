@@ -126,8 +126,8 @@ export const AccumulatorCard: React.FC<AccumulatorCardProps> = ({
         <div>
           <span className="text-[10px] text-emerald-400/80 block uppercase">Selection Count</span>
           <span className="font-bold text-white text-sm flex items-center gap-1">
-            {slip.totalSelections}/7 Selections
-            <span className="text-[10px] text-emerald-400">(Max 7 Verified)</span>
+            {slip.totalSelections} Selections
+            <span className="text-[10px] text-emerald-400">(Evidence-filtered)</span>
           </span>
         </div>
 
