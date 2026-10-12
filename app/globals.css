@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-bg-base: #04160e;
+    --color-bg-surface: #08261b;
+    --color-bg-elevated: #0d3829;
+    --color-border-subtle: #134e38;
+    --pitch-green: #059669;
+    --gold-accent: #f59e0b;
+  }
+
+  body {
+    background-color: #04160e;
+    color: #f8fafc;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    overflow-x: hidden;
+  }
+
+  .font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Custom Sports Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #04160e;
+}
+::-webkit-scrollbar-thumb {
+  background: #0d3829;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #15543d;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Print styles for exportable Accumulator Slip */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+  header, nav, button {
+    display: none !important;
+  }
+}

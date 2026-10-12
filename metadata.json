@@ -1,0 +1,6 @@
+{
+  "name": "AEE Football Group — Tips & Accumulators",
+  "description": "Evidence-based football & basketball accumulator modeling with 10.00+ target odds, global match corners analysis (Over 7.5+), and referee bookings projections. Prompt by mr. Wolf.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

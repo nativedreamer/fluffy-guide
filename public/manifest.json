@@ -1,0 +1,69 @@
+{
+  "id": "/",
+  "name": "AEE Football Group — Tips & Accumulators",
+  "short_name": "AEE Tips",
+  "description": "Quantitative sports research, 10.00+ target odds accumulators, and global football corners & bookings statistical modeling.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#0c3324",
+  "background_color": "#08241a",
+  "lang": "en",
+  "categories": ["sports", "utilities", "news"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "10+ Odds Accumulator",
+      "short_name": "10+ Acca",
+      "description": "Generate minimum 10.00+ odds accumulator",
+      "url": "/?tab=acca",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Corners Analysis",
+      "short_name": "Corners",
+      "description": "Global Over 7.5+ corners statistical models",
+      "url": "/?tab=corners",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Bookings & Cards",
+      "short_name": "Bookings",
+      "description": "Referee and disciplinary match projections",
+      "url": "/?tab=bookings",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

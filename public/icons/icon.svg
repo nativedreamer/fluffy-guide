@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="pitchGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#082f22"/>
+      <stop offset="50%" stop-color="#0e3d2d"/>
+      <stop offset="100%" stop-color="#06241a"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fcd34d"/>
+      <stop offset="50%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Outer Rounded Shield -->
+  <rect width="512" height="512" rx="110" fill="url(#pitchGrad)"/>
+  <rect x="16" y="16" width="480" height="480" rx="94" stroke="url(#goldGrad)" stroke-width="8" stroke-opacity="0.8"/>
+  
+  <!-- Pitch Lines Graphic -->
+  <circle cx="256" cy="256" r="140" stroke="#10b981" stroke-width="6" stroke-opacity="0.3" fill="none"/>
+  <line x1="256" y1="50" x2="256" y2="462" stroke="#10b981" stroke-width="6" stroke-opacity="0.25"/>
+  <circle cx="256" cy="256" r="12" fill="#10b981" fill-opacity="0.6"/>
+
+  <!-- Gold Trophy / Ball Accent -->
+  <path d="M196 170 C196 140, 316 140, 316 170 C316 230, 276 250, 256 280 C236 250, 196 230, 196 170 Z" fill="url(#goldGrad)"/>
+  <path d="M236 280 L276 280 L290 340 L222 340 Z" fill="url(#goldGrad)"/>
+  <rect x="210" y="340" width="92" height="18" rx="4" fill="url(#goldGrad)"/>
+  
+  <!-- Star Badges -->
+  <polygon points="256,105 263,122 281,122 266,133 272,150 256,139 240,150 246,133 231,122 249,122" fill="#fcd34d"/>
+  <polygon points="210,120 215,133 229,133 218,141 222,154 210,146 198,154 202,141 191,133 205,133" fill="#fcd34d" opacity="0.8"/>
+  <polygon points="302,120 307,133 321,133 310,141 314,154 302,146 290,154 294,141 283,133 297,133" fill="#fcd34d" opacity="0.8"/>
+  
+  <!-- Text monogram "AEE" -->
+  <text x="256" y="420" font-family="system-ui, -apple-system, sans-serif" font-size="44" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="4">AEE TIPS</text>
+  <text x="256" y="448" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#f59e0b" text-anchor="middle" letter-spacing="3">10+ ODDS QUANT</text>
+</svg>
