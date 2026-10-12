@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   AnalysisCategory, 
   MatchFixture, 
   OddsFormat, 
   SportType, 
-  AccumulatorSlip 
+  AccumulatorSlip,
+  DailyTipGroup,
+  WeeklyTipGroup
 } from '../lib/types';
 import { GLOBAL_FIXTURES } from '../lib/sportsData';
 import { 
@@ -15,6 +17,8 @@ import { usePWAInstall } from '../lib/usePWAInstall';
 
 import { Header } from '../components/Header';
 import { CategoryTabs } from '../components/CategoryTabs';
+import { DailyTipsSection } from '../components/DailyTipsSection';
+import { WeeklyTipsSection } from '../components/WeeklyTipsSection';
 import { AccumulatorCard } from '../components/AccumulatorCard';
 import { CornersTable } from '../components/CornersTable';
 import { BookingsTable } from '../components/BookingsTable';
@@ -34,12 +38,14 @@ import {
   TrendingUp, 
   ShieldCheck, 
   Activity,
-  Layers
+  Layers,
+  Calendar,
+  CalendarDays
 } from 'lucide-react';
 
 export default function App() {
   const [fixtures, setFixtures] = useState<MatchFixture[]>(GLOBAL_FIXTURES);
-  const [activeTab, setActiveTab] = useState<AnalysisCategory | 'ALL_FIXTURES'>('ACCUMULATOR');
+  const [activeTab, setActiveTab] = useState<AnalysisCategory | 'ALL_FIXTURES'>('DAILY_TIPS');
   const [oddsFormat, setOddsFormat] = useState<OddsFormat>('DECIMAL');
   const [selectedSport, setSelectedSport] = useState<SportType>('FOOTBALL');
   const [targetOdds, setTargetOdds] = useState<number>(10.0);
@@ -75,6 +81,30 @@ export default function App() {
   const handleRegenerate = () => {
     const newSlip = generateAccumulatorSlip(selectedSport, targetOdds, fixtures);
     setSlip(newSlip);
+  };
+
+  // Load a curated Daily Tip bundle directly into active slip
+  const handleLoadDailyTip = (dailyTip: DailyTipGroup) => {
+    setSlip({
+      ...slip,
+      combinedOdds: dailyTip.combinedOdds,
+      totalSelections: dailyTip.selections.length,
+      selections: dailyTip.selections,
+      bookingCode: dailyTip.bookingCode
+    });
+    setActiveTab('ACCUMULATOR');
+  };
+
+  // Load a curated Weekly Tip bundle directly into active slip
+  const handleLoadWeeklyTip = (weeklyTip: WeeklyTipGroup) => {
+    setSlip({
+      ...slip,
+      combinedOdds: weeklyTip.combinedOdds,
+      totalSelections: weeklyTip.selections.length,
+      selections: weeklyTip.selections,
+      bookingCode: weeklyTip.bookingCode
+    });
+    setActiveTab('ACCUMULATOR');
   };
 
   // Add fixture pick to slip manually
@@ -173,17 +203,17 @@ export default function App() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-mono font-bold text-amber-400 uppercase tracking-widest">
-                  COMMAND WORKFLOW
+                  LIVE QUANT ACCUMULATOR ENGINE
                 </span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-700 font-mono">
-                  Section 1 · Starting Command
+                  Real Fixtures · Oct 2026
                 </span>
               </div>
               <h2 className="text-base sm:text-lg font-black text-white font-sans mt-0.5">
-                Ready for Evidence-Based Accumulator & Match Analysis?
+                Ready for Evidence-Based Accumulator &amp; Match Analysis?
               </h2>
               <p className="text-xs text-emerald-200/80 font-mono mt-0.5">
-                Tap &quot;LET&apos;S GO&quot; to choose Football, Basketball, or Hybrid and generate verified 10.00+ odds.
+                Real fixtures: Liverpool v Chelsea, Bournemouth v Arsenal, Spurs v West Ham, Nations League &amp; NBA.
               </p>
             </div>
           </div>
@@ -199,7 +229,29 @@ export default function App() {
           </div>
         </div>
 
-        {/* Tab 1: 10.00+ Target Odds Accumulator */}
+        {/* Tab 1: Daily Tips & Bankers */}
+        {activeTab === 'DAILY_TIPS' && (
+          <ErrorBoundary>
+            <DailyTipsSection
+              oddsFormat={oddsFormat}
+              onLoadIntoActiveSlip={handleLoadDailyTip}
+              onSelectMatchDetail={setSelectedMatchId}
+            />
+          </ErrorBoundary>
+        )}
+
+        {/* Tab 2: Weekly & Weekend Slates */}
+        {activeTab === 'WEEKLY_TIPS' && (
+          <ErrorBoundary>
+            <WeeklyTipsSection
+              oddsFormat={oddsFormat}
+              onLoadIntoActiveSlip={handleLoadWeeklyTip}
+              onSelectMatchDetail={setSelectedMatchId}
+            />
+          </ErrorBoundary>
+        )}
+
+        {/* Tab 3: 10.00+ Target Odds Accumulator */}
         {activeTab === 'ACCUMULATOR' && (
           <ErrorBoundary>
             <div className="space-y-6">
@@ -214,7 +266,7 @@ export default function App() {
               <div className="bg-[#051c13] border border-emerald-800/80 rounded-2xl p-4 sm:p-5 text-xs font-mono space-y-2">
                 <div className="flex items-center gap-2 text-amber-400 font-bold uppercase tracking-wider text-xs">
                   <ShieldCheck className="w-4 h-4" />
-                  Operating Principle & Verification Rules
+                  Operating Principle &amp; Verification Rules
                 </div>
                 <p className="text-emerald-200/90 leading-relaxed">
                   SEARCH WIDELY → VERIFY CURRENT DATA → ANALYZE DEEPLY → FILTER AGGRESSIVELY → COMPARE MARKETS → CONSTRUCT THE ACCUMULATOR → AUDIT RISK → OUTPUT ONLY THE PICKS.
@@ -227,7 +279,7 @@ export default function App() {
                     ✓ Combined Odds ≥ 10.00 Target Met
                   </span>
                   <span className="p-2 rounded-lg bg-[#08291d] border border-emerald-900">
-                    ✓ Correlation & Uncertainty Filtered
+                    ✓ Correlation &amp; Uncertainty Filtered
                   </span>
                 </div>
               </div>
@@ -235,7 +287,7 @@ export default function App() {
           </ErrorBoundary>
         )}
 
-        {/* Tab 2: Corners Analysis */}
+        {/* Tab 4: Corners Analysis */}
         {activeTab === 'CORNERS' && (
           <ErrorBoundary>
             <CornersTable
@@ -245,7 +297,7 @@ export default function App() {
           </ErrorBoundary>
         )}
 
-        {/* Tab 3: Bookings Analysis */}
+        {/* Tab 5: Bookings Analysis */}
         {activeTab === 'BOOKINGS' && (
           <ErrorBoundary>
             <BookingsTable
@@ -255,7 +307,7 @@ export default function App() {
           </ErrorBoundary>
         )}
 
-        {/* Tab 4: Dual Corners and Bookings (Section 10) */}
+        {/* Tab 6: Dual Corners and Bookings (Section 10) */}
         {activeTab === 'BOTH_CORNERS_BOOKINGS' && (
           <ErrorBoundary>
             <div className="space-y-6">
@@ -263,7 +315,7 @@ export default function App() {
                 <div>
                   <h3 className="text-sm font-bold text-white flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-amber-400" />
-                    Section 10 · Dual Global Corners & Bookings Analysis
+                    Section 10 · Dual Global Corners &amp; Bookings Analysis
                   </h3>
                   <p className="text-xs text-emerald-300/80 font-mono mt-0.5">
                     Analyzing each category independently. High-corner matches are never assumed to be high-card matches without independent evidence.
@@ -286,7 +338,7 @@ export default function App() {
           </ErrorBoundary>
         )}
 
-        {/* Tab 5: All Fixtures */}
+        {/* Tab 7: All Real Live Fixtures */}
         {activeTab === 'ALL_FIXTURES' && (
           <ErrorBoundary>
             <AllFixturesList

@@ -1,6 +1,14 @@
 import React from 'react';
 import { AnalysisCategory } from '../lib/types';
-import { Target, Flag, ShieldAlert, Sparkles, LayoutList } from 'lucide-react';
+import { 
+  Target, 
+  Calendar, 
+  CalendarDays, 
+  Flag, 
+  ShieldAlert, 
+  Sparkles, 
+  LayoutList 
+} from 'lucide-react';
 
 interface CategoryTabsProps {
   activeTab: AnalysisCategory | 'ALL_FIXTURES';
@@ -15,25 +23,41 @@ export const CategoryTabs: React.FC<CategoryTabsProps> = ({
 }) => {
   const tabs = [
     {
+      id: 'DAILY_TIPS' as const,
+      label: 'Daily Tips & Bankers',
+      shortLabel: 'Daily Tips',
+      icon: Calendar,
+      tag: 'Today',
+      badge: 'Today Live'
+    },
+    {
+      id: 'WEEKLY_TIPS' as const,
+      label: 'Weekly & Weekend Slates',
+      shortLabel: 'Weekly Tips',
+      icon: CalendarDays,
+      tag: 'Weekend',
+      badge: 'PL Clashes'
+    },
+    {
       id: 'ACCUMULATOR' as const,
-      label: '10.00+ Odds Accumulator',
+      label: '10.00+ Target Accumulator',
       shortLabel: '10+ Acca',
       icon: Target,
-      tag: 'Section 1-15',
+      tag: 'Section 15',
       badge: accumulatorCount > 0 ? `${accumulatorCount}/7` : 'Ready'
     },
     {
       id: 'CORNERS' as const,
-      label: 'Global Corners Analysis',
-      shortLabel: 'Corners (Over 7.5+)',
+      label: 'Corners (Over 7.5+)',
+      shortLabel: 'Corners',
       icon: Flag,
       tag: 'Over 7.5+',
       badge: 'Up to 20'
     },
     {
       id: 'BOOKINGS' as const,
-      label: 'Global Bookings & Cards',
-      shortLabel: 'Bookings & Cards',
+      label: 'Bookings & Referee Cards',
+      shortLabel: 'Bookings',
       icon: ShieldAlert,
       tag: 'Referees',
       badge: 'Verified'
@@ -41,18 +65,18 @@ export const CategoryTabs: React.FC<CategoryTabsProps> = ({
     {
       id: 'BOTH_CORNERS_BOOKINGS' as const,
       label: 'Dual Corners & Bookings',
-      shortLabel: 'Dual Analysis',
+      shortLabel: 'Dual Mode',
       icon: Sparkles,
       tag: 'Section 10',
       badge: 'Both'
     },
     {
       id: 'ALL_FIXTURES' as const,
-      label: 'All Global Fixtures',
-      shortLabel: 'Fixtures',
+      label: 'Real Live Fixtures',
+      shortLabel: 'All Matches',
       icon: LayoutList,
-      tag: 'Worldwide',
-      badge: '120+ Odds'
+      tag: 'Global',
+      badge: 'Live Data'
     }
   ];
 
