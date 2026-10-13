@@ -1,82 +1,26 @@
 # Fluffy Guide — Live Sports Fixture Radar
 
-A React 19, TypeScript, Tailwind CSS, and Vite fixture radar configured for **Vercel** deployment. Match schedules are fetched at runtime from ESPN's public scoreboard feed; the app does not ship a hard-coded fixture list.
+A React 19, TypeScript, Tailwind CSS, and Vite fixture radar. Upcoming matches come from ESPN scoreboards. Corner and booking projections come from ESPN match-summary boxscores stored in `data/corner-booking-samples.json`, not from guessed league averages.
 
-## 🚀 Key Features
+## Analysis backend
 
-1. **Verified upcoming fixtures:**
-   - Fetches scheduled events from ESPN for selected football leagues and the NBA.
-   - Filters out events whose kickoff time has passed on the server.
-   - Shows the provider, kickoff timestamp, and source link for traceability.
+- `GET /api/fixtures?days=6` — upcoming football and basketball fixtures, published prices, and form.
+- `GET /api/analysis?days=6&sport=FOOTBALL|BASKETBALL|BOTH&targetOdds=10` — the same fixtures plus corner projections, card projections, and an accumulator.
+- The accumulator uses only published odds, a confidence filter, and at most 7 selections. If those cannot reach 10.00, it says so instead of adding a weak leg.
+- Corner totals are home corners won plus away corners won. Card totals are yellow cards plus red cards. Half-by-half corners stay "Data unavailable" because ESPN key events do not list corners.
+- `npm run refresh` rebuilds the sample file from current ESPN summaries.
 
-2. **Date and time filters:**
-   - Filter by exact UTC date and morning, afternoon, or evening kickoff window.
-   - Sorts results by the verified kickoff timestamp.
+No sports prediction is guaranteed. Odds and team news can change before kickoff.
 
-3. **No invented picks:**
-   - Fixtures without a verified odds feed are view-only.
-   - No stale fallback fixtures are shown if the live provider is unavailable.
-   - The accumulator has no hard selection-count cap; it uses only supported, upcoming, non-duplicate fixtures.
-
-4. **Corners and bookings research panels:**
-   - Both panels now enumerate upcoming ESPN fixtures and apply the prompt's required quality gates.
-   - ESPN fields that are not available are shown as `Data unavailable` and excluded from projections rather than guessed.
-
-4. **Realistic Paper Trading Simulation Engine:**
-   - Real-time simulated fills, leverage selector (1x - 125x), dynamic PnL tracking, margin maintenance checks, liquidation calculations, and interactive order book.
-   - Auto-execute mode for signals meeting minimum confluence thresholds.
-
-5. **Deploy Ready for Vercel:**
-   - Configured with `vercel.json` for fast SPA routing, clean URLs, and optimized Vite production builds (`npm run build`).
-
----
-
-## 🛠 Tech Stack
-
-- **Framework:** React 19 + TypeScript + Vite 8
-- **Styling:** Tailwind CSS v4 + Framer Motion
-- **Icons:** Lucide React
-- **Data Source:** ESPN public scoreboard API via a Vercel serverless function
-- **Deployment:** Vercel (or static hosting)
-
----
-
-## 📦 Local Development
+## Local development
 
 ```bash
-# Install dependencies
 npm install
-
-# Start local development server (runs on port 3000)
+npm test
 npm run dev
-
-# Run TypeScript type check
-npm run lint
-
-# Build for production
-npm run build
 ```
 
----
+## Deploy
 
-## ⚡ Vercel Deployment Instructions
+Connect the repository to Vercel with build command `npm run build` and output directory `dist`. The `/api` functions serve the analysis. Do not rewrite `/api/*` to `index.html`.
 
-1. **Push to your GitHub repository:**
-   ```bash
-   git add .
-   git commit -m "feat: perpetual radar with unlimited pair screener, manual analysis studio, and paper trading"
-   git push origin main
-   ```
-
-2. **Connect to Vercel:**
-   - Go to [vercel.com](https://vercel.com) and click **"Add New Project"**.
-   - Import your GitHub repository.
-   - **Framework Preset:** Vite (or Other).
-   - **Build Command:** `npm run build` (or `vite build`).
-   - **Output Directory:** `dist`.
-   - Click **Deploy**. Vercel will automatically build and publish your project with automated previews on each commit.
-
----
-
-## 📄 License
-MIT License. Free for personal and algorithmic trading research.

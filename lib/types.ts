@@ -151,6 +151,8 @@ export interface AccumulatorSlip {
   selections: AccumulatorSelection[];
   riskNote: string;
   bookingCode: string;
+  meetsTarget?: boolean;
+  maxSelections?: number;
   estimatedReturnWithStake?: number;
 }
 

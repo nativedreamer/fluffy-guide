@@ -45,6 +45,9 @@ import {
 
 export default function App() {
   const [fixtures, setFixtures] = useState<MatchFixture[]>([]);
+  const [dailyTips, setDailyTips] = useState<DailyTipGroup[]>([]);
+  const [weeklyTips, setWeeklyTips] = useState<WeeklyTipGroup[]>([]);
+  const [coverage, setCoverage] = useState('');
   const [activeTab, setActiveTab] = useState<AnalysisCategory | 'ALL_FIXTURES'>('ALL_FIXTURES');
   const [fixturesLoading, setFixturesLoading] = useState(true);
   const [fixturesError, setFixturesError] = useState<string | null>(null);
@@ -58,29 +61,34 @@ export default function App() {
     return generateAccumulatorSlip('FOOTBALL', 10.0, []);
   });
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadFixtures() {
-      setFixturesLoading(true);
-      setFixturesError(null);
-      try {
-        const response = await fetch('/api/fixtures?days=7');
-        const payload = await response.json();
-        if (!response.ok) throw new Error(payload.error || 'Live fixture feed unavailable');
-        if (!cancelled) setFixtures(payload.fixtures || []);
-      } catch (error) {
-        if (!cancelled) {
-          setFixtures([]);
-          setFixturesError(error instanceof Error ? error.message : 'Live fixture feed unavailable');
-        }
-      } finally {
-        if (!cancelled) setFixturesLoading(false);
-      }
+  const loadAnalysis = async (sport: SportType, target: number) => {
+    setFixturesLoading(true);
+    setFixturesError(null);
+    try {
+      const response = await fetch(`/api/analysis?days=6&sport=${sport}&targetOdds=${target}`);
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'Match analysis unavailable');
+      const nextFixtures = payload.fixtures || [];
+      const nextSlip = payload.accumulator || generateAccumulatorSlip(sport, target, nextFixtures);
+      setFixtures(nextFixtures);
+      setSlip(nextSlip);
+      setDailyTips(payload.dailyTips || []);
+      setWeeklyTips(payload.weeklyTips || []);
+      setCoverage(`${(payload.coverage || []).slice(0, 8).join(', ') || 'ESPN'} · ${payload.dataset?.samples || 0} boxscores`);
+      setAnalysisMessage(nextSlip.meetsTarget ? null : nextSlip.riskNote || "I couldn't identify enough sufficiently supported selections to construct a 10+ odds accumulator within the 7-selection limit.");
+    } catch (error) {
+      setFixtures([]);
+      setDailyTips([]);
+      setWeeklyTips([]);
+      setFixturesError(error instanceof Error ? error.message : 'Match analysis unavailable');
+      setAnalysisMessage("I couldn't identify enough sufficiently supported selections to construct a 10+ odds accumulator within the 7-selection limit.");
+    } finally {
+      setFixturesLoading(false);
     }
+  };
 
-    loadFixtures();
-    return () => { cancelled = true; };
+  useEffect(() => {
+    loadAnalysis('FOOTBALL', 10);
   }, []);
 
   // Modals state
@@ -100,20 +108,13 @@ export default function App() {
   const handleRunAnalysis = (sport: SportType, target: number) => {
     setSelectedSport(sport);
     setTargetOdds(target);
-    const newSlip = generateAccumulatorSlip(sport, target, fixtures);
-    setSlip(newSlip);
-    setAnalysisMessage(
-      newSlip.selections.length === 0
-        ? "I couldn't identify enough sufficiently supported selections to construct a responsible 10+ odds accumulator. The ESPN fixture feed does not currently provide enough verified supporting statistics for a responsible pick."
-        : null
-    );
     setActiveTab('ACCUMULATOR');
+    loadAnalysis(sport, target);
   };
 
   // Re-generate accumulator
   const handleRegenerate = () => {
-    const newSlip = generateAccumulatorSlip(selectedSport, targetOdds, fixtures);
-    setSlip(newSlip);
+    loadAnalysis(selectedSport, targetOdds);
   };
 
   // Load a curated Daily Tip bundle directly into active slip
@@ -212,8 +213,7 @@ export default function App() {
         selectedSport={selectedSport}
         onSelectSport={(s) => {
           setSelectedSport(s);
-          const newSlip = generateAccumulatorSlip(s, targetOdds, fixtures);
-          setSlip(newSlip);
+          loadAnalysis(s, targetOdds);
         }}
       />
 
@@ -228,12 +228,12 @@ export default function App() {
       <main className="max-w-7xl w-full mx-auto px-3 sm:px-6 py-5 space-y-6 flex-1">
         {fixturesLoading && (
           <div className="rounded-xl border border-emerald-800 bg-[#051c13] px-4 py-3 text-xs font-mono text-emerald-200">
-            Loading upcoming fixtures from the live scoreboard…
+            Loading upcoming fixtures and ESPN boxscore samples…
           </div>
         )}
         {fixturesError && (
           <div className="rounded-xl border border-amber-800 bg-[#241b05] px-4 py-3 text-xs font-mono text-amber-200">
-            Live fixture feed unavailable. No cached or invented fixtures are shown.
+            Live match analysis unavailable. No cached or invented fixtures are shown.
           </div>
         )}
         {/* Hero Quick Command Banner */}
@@ -255,7 +255,7 @@ export default function App() {
                 Ready for Evidence-Based Accumulator &amp; Match Analysis?
               </h2>
               <p className="text-xs text-emerald-200/80 font-mono mt-0.5">
-                Upcoming fixtures only — fetched from ESPN and sorted by verified UTC kickoff time.
+                Upcoming fixtures only — ESPN scoreboard prices plus corner and card boxscores.
               </p>
             </div>
           </div>
@@ -276,6 +276,7 @@ export default function App() {
           <ErrorBoundary>
             <DailyTipsSection
               oddsFormat={oddsFormat}
+              tips={dailyTips}
               onLoadIntoActiveSlip={handleLoadDailyTip}
               onSelectMatchDetail={setSelectedMatchId}
             />
@@ -287,6 +288,7 @@ export default function App() {
           <ErrorBoundary>
             <WeeklyTipsSection
               oddsFormat={oddsFormat}
+              tips={weeklyTips}
               onLoadIntoActiveSlip={handleLoadWeeklyTip}
               onSelectMatchDetail={setSelectedMatchId}
             />
@@ -323,7 +325,7 @@ export default function App() {
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 text-[11px] text-emerald-300/80">
                   <span className="p-2 rounded-lg bg-[#08291d] border border-emerald-900">
-                    ✓ Unlimited selections, evidence-filtered
+                    ✓ Maximum 7 selections
                   </span>
                   <span className="p-2 rounded-lg bg-[#08291d] border border-emerald-900">
                     ✓ Combined Odds ≥ 10.00 Target Met
@@ -342,6 +344,7 @@ export default function App() {
           <ErrorBoundary>
             <CornersTable
               fixtures={fixtures}
+              coverage={coverage}
               onSelectMatchDetail={setSelectedMatchId}
             />
           </ErrorBoundary>
@@ -352,6 +355,7 @@ export default function App() {
           <ErrorBoundary>
             <BookingsTable
               fixtures={fixtures}
+              coverage={coverage}
               onSelectMatchDetail={setSelectedMatchId}
             />
           </ErrorBoundary>
@@ -376,12 +380,14 @@ export default function App() {
               {/* Corners Section */}
               <CornersTable
                 fixtures={fixtures}
+                coverage={coverage}
                 onSelectMatchDetail={setSelectedMatchId}
               />
 
               {/* Bookings Section */}
               <BookingsTable
                 fixtures={fixtures}
+                coverage={coverage}
                 onSelectMatchDetail={setSelectedMatchId}
               />
             </div>

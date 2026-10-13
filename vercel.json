@@ -3,8 +3,18 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "functions": {
+    "api/analysis.js": {
+      "maxDuration": 60,
+      "includeFiles": "data/corner-booking-samples.json"
+    },
+    "api/fixtures.js": {
+      "maxDuration": 60,
+      "includeFiles": "data/corner-booking-samples.json"
+    }
+  }
 }

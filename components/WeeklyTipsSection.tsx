@@ -17,12 +17,14 @@ import {
 
 interface WeeklyTipsSectionProps {
   oddsFormat: OddsFormat;
+  tips?: WeeklyTipGroup[];
   onLoadIntoActiveSlip: (tipGroup: WeeklyTipGroup) => void;
   onSelectMatchDetail?: (matchId: string) => void;
 }
 
 export const WeeklyTipsSection: React.FC<WeeklyTipsSectionProps> = ({
   oddsFormat,
+  tips,
   onLoadIntoActiveSlip,
   onSelectMatchDetail
 }) => {
@@ -70,7 +72,13 @@ export const WeeklyTipsSection: React.FC<WeeklyTipsSectionProps> = ({
 
       {/* Grid of Weekly Mega Slips */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {CURATED_WEEKLY_TIPS.map((tip) => {
+        {(tips ?? CURATED_WEEKLY_TIPS).length === 0 && (
+          <div className="bg-[#241b05] border border-amber-800 rounded-2xl p-5 text-sm text-amber-100">
+            I couldn't identify enough sufficiently supported selections to construct a 10+ odds accumulator within the 7-selection limit.
+            <span className="block mt-2 text-xs font-mono text-amber-300">prompt by mr. Wolf</span>
+          </div>
+        )}
+        {(tips ?? CURATED_WEEKLY_TIPS).map((tip) => {
           const estPayout = +(stake * tip.combinedOdds).toFixed(2);
           const isCopied = copiedId === tip.id;
 

@@ -1,5 +1,5 @@
-import { AccumulatorSelection, AccumulatorSlip, MatchFixture, OddsFormat, SportType } from './types';
-import { GLOBAL_FIXTURES } from './sportsData';
+import { buildAccumulator } from '../api/lib/accumulator.js';
+import { AccumulatorSlip, MatchFixture, OddsFormat, SportType } from './types';
 
 /**
  * Converts decimal odds to Fractional or American formats
@@ -42,78 +42,17 @@ export function formatOdds(decimalOdds: number, format: OddsFormat = 'DECIMAL'):
 }
 
 /**
- * Quantitative Accumulator Generator (prompt workflow)
- * Strictly enforces:
- * - Minimum combined odds of targetOdds (default 10.00+)
- * - Unlimited selections, subject to evidence and duplicate-match filters
- * - Diversified (no duplicate matches)
- * - Fewest selections reasonably possible
+ * Quantitative accumulator.
+ * Uses the same server rules: published prices only, confidence filter,
+ * maximum 7 selections, combined odds at or above the target when the
+ * evidence supports it.
  */
 export function generateAccumulatorSlip(
   sport: SportType = 'FOOTBALL',
   targetOdds: number = 10.0,
-  fixtures: MatchFixture[] = GLOBAL_FIXTURES
+  fixtures: MatchFixture[] = []
 ): AccumulatorSlip {
-  // Step 1: Filter pool by requested sport
-  let eligibleFixtures = fixtures.filter((f) => {
-    if (sport === 'FOOTBALL') return f.sport === 'Football';
-    if (sport === 'BASKETBALL') return f.sport === 'Basketball';
-    return true; // BOTH
-  });
-
-  // Step 2: Remove high uncertainty fixtures (Confidence score >= 80)
-  eligibleFixtures = eligibleFixtures
-    .filter((f) => f.recommendedSelection.confidenceScore >= 80)
-    .sort((a, b) => b.recommendedSelection.confidenceScore - a.recommendedSelection.confidenceScore);
-
-  // Construct the combination reaching targetOdds with the fewest supported selections.
-  const selectedPicks: AccumulatorSelection[] = [];
-  let currentOdds = 1.0;
-
-  for (const fix of eligibleFixtures) {
-    // Avoid duplicate match
-    if (selectedPicks.some((p) => p.matchId === fix.id)) continue;
-
-    const pick = fix.recommendedSelection;
-    selectedPicks.push({
-      id: `sel-${fix.id}-${Date.now()}`,
-      matchId: fix.id,
-      match: `${fix.homeTeam} vs ${fix.awayTeam}`,
-      sport: fix.sport,
-      league: fix.league,
-      prediction: pick.pick,
-      market: pick.market,
-      odds: pick.odds,
-      confidenceScore: pick.confidenceScore,
-      dataQuality: 'High',
-      date: fix.date
-    });
-
-    currentOdds *= pick.odds;
-
-    // Check if target is achieved
-    if (currentOdds >= targetOdds && selectedPicks.length >= 3) {
-      break;
-    }
-  }
-
-  // Final Risk Audit & Recalculate
-  const finalCombinedOdds = Math.round(currentOdds * 100) / 100;
-  const bookingCode = `AEE-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
-
-  const todayStr = new Date().toISOString().split('T')[0];
-
-  return {
-    id: `slip-${Date.now()}`,
-    createdAt: todayStr,
-    sport,
-    targetOdds,
-    combinedOdds: finalCombinedOdds,
-    totalSelections: selectedPicks.length,
-    selections: selectedPicks,
-    riskNote: 'No sports prediction is guaranteed. Odds and match information can change before kickoff.',
-    bookingCode
-  };
+  return buildAccumulator(fixtures, sport, targetOdds) as AccumulatorSlip;
 }
 
 /**
@@ -129,20 +68,24 @@ export function formatSection15Output(slip: AccumulatorSlip): string {
   text += `Sport: ${sportLabel}\n`;
   text += `Date: ${slip.createdAt}\n`;
   text += `Target Odds: ${slip.targetOdds.toFixed(2)}+\n\n`;
-  text += `| #   | Match            | Prediction | Odds |\n`;
-  text += `| --- | ---------------- | ---------- | ---- |\n`;
+  text += `| #   | Match            | Prediction | Odds | Confidence |\n`;
+  text += `| --- | ---------------- | ---------- | ---- | ---------- |\n`;
 
   slip.selections.forEach((sel, i) => {
     const num = `${i + 1}`.padEnd(3, ' ');
     const match = sel.match.padEnd(16, ' ');
     const pred = sel.prediction.padEnd(10, ' ');
     const odds = sel.odds.toFixed(2);
-    text += `| ${num} | ${match} | ${pred} | ${odds} |\n`;
+    text += `| ${num} | ${match} | ${pred} | ${odds} | ${sel.confidenceScore}% |\n`;
   });
 
-  text += `\nTotal Selections: ${slip.totalSelections}\n`;
+  text += `\nTotal Selections: ${slip.totalSelections}/7\n`;
   text += `Combined Odds: ${slip.combinedOdds.toFixed(2)}\n\n`;
-  text += `Risk Note: ${slip.riskNote}\n\n`;
+  if (slip.meetsTarget === false) {
+    text += `${slip.riskNote}\n`;
+    text += `The rows above are the strongest supported selections only. They are not a recommended 10+ accumulator.\n\n`;
+  }
+  text += `Risk Note: No sports prediction is guaranteed. Odds and match information can change before kickoff.\n\n`;
   text += `Aee football group \nprompt by mr. Wolf`;
 
   return text;

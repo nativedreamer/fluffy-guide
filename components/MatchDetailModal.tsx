@@ -218,7 +218,7 @@ export const MatchDetailModal: React.FC<MatchDetailModalProps> = ({
                   <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
                   Disciplinary Model: {fixture.bookings.totalCardProjection}
                 </span>
-                <span>Referee: {fixture.bookings.referee?.name || 'Assigned'}</span>
+                <span>Referee: {fixture.bookings.referee?.name || 'Not confirmed'}</span>
               </div>
               <p className="text-slate-300 text-[11px]">
                 {fixture.bookings.tacticalNotes}

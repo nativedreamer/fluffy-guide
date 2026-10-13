@@ -4,11 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --port=3000 --host=0.0.0.0",
+    "dev": "vite --host=0.0.0.0",
     "build": "vite build",
-    "preview": "vite preview --port=3000 --host=0.0.0.0",
+    "preview": "vite preview --host=0.0.0.0",
     "clean": "rm -rf dist server.js",
     "test": "tsx --test __tests__/*.test.mjs",
+    "refresh": "node scripts/refresh-samples.mjs",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

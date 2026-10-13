@@ -24,7 +24,7 @@ export const CategoryTabs: React.FC<CategoryTabsProps> = ({
   const tabs = [
     {
       id: 'DAILY_TIPS' as const,
-      label: 'Daily Tips & Bankers',
+      label: 'Daily Tips',
       shortLabel: 'Daily Tips',
       icon: Calendar,
       tag: 'Today',

@@ -17,12 +17,14 @@ import {
 
 interface DailyTipsSectionProps {
   oddsFormat: OddsFormat;
+  tips?: DailyTipGroup[];
   onLoadIntoActiveSlip: (tipGroup: DailyTipGroup) => void;
   onSelectMatchDetail?: (matchId: string) => void;
 }
 
 export const DailyTipsSection: React.FC<DailyTipsSectionProps> = ({
   oddsFormat,
+  tips,
   onLoadIntoActiveSlip,
   onSelectMatchDetail
 }) => {
@@ -65,7 +67,7 @@ export const DailyTipsSection: React.FC<DailyTipsSectionProps> = ({
               </span>
             </div>
             <h2 className="text-lg sm:text-xl font-black text-white">
-              Today&apos;s Quantitative Daily Tips &amp; Bankers
+              Today's Quantitative Daily Tips
             </h2>
             <p className="text-xs text-emerald-200/80 font-mono mt-0.5">
               Live &amp; upcoming fixtures strictly evaluated for statistical probability and zero high-uncertainty risks.
@@ -81,7 +83,13 @@ export const DailyTipsSection: React.FC<DailyTipsSectionProps> = ({
 
       {/* Grid of 3 Daily Tip Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {CURATED_DAILY_TIPS.map((tip) => {
+        {(tips ?? CURATED_DAILY_TIPS).length === 0 && (
+          <div className="lg:col-span-3 bg-[#241b05] border border-amber-800 rounded-2xl p-5 text-sm text-amber-100">
+            I couldn't identify enough sufficiently supported selections to construct a daily slate from today's upcoming fixtures.
+            <span className="block mt-2 text-xs font-mono text-amber-300">prompt by mr. Wolf</span>
+          </div>
+        )}
+        {(tips ?? CURATED_DAILY_TIPS).map((tip) => {
           const stake = stakeMap[tip.id] || 20;
           const estPayout = +(stake * tip.combinedOdds).toFixed(2);
           const isCopied = copiedId === tip.id;
