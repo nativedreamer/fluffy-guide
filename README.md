@@ -6,7 +6,7 @@ A React 19, TypeScript, Tailwind CSS, and Vite fixture radar. Upcoming matches c
 
 - `GET /api/fixtures?days=6` — upcoming football and basketball fixtures, published prices, and form.
 - `GET /api/analysis?days=6&sport=FOOTBALL|BASKETBALL|BOTH&targetOdds=10` — the same fixtures plus corner projections, card projections, and an accumulator.
-- The accumulator uses only published odds, a confidence filter, and at most 7 selections. If those cannot reach 10.00, it says so instead of adding a weak leg.
+- The accumulator keeps the existing confidence filter. When boxscores exist, a shrunk Poisson or normal model is merged on top: the leg is removed if that model puts the side under 50%, or if the devigged price is more than 8 points shorter than the model. Corners and cards still need the historical hit rate, and the shrunk count model has to clear the same line.
 - Corner totals are home corners won plus away corners won. Card totals are yellow cards plus red cards. Half-by-half corners stay "Data unavailable" because ESPN key events do not list corners.
 - `npm run refresh` rebuilds the sample file from current ESPN summaries.
 

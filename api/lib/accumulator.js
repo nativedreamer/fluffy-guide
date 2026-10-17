@@ -13,10 +13,16 @@ function eligibleFixtures(fixtures, sport) {
     const pick = fixture.recommendedSelection;
     if (!pick || pick.confidenceScore < MIN_CONFIDENCE) return false;
     if (!(pick.odds >= MIN_ODDS && pick.odds <= MAX_ODDS)) return false;
+    if (typeof pick.edge === 'number' && pick.edge <= -0.08) return false;
     if (!pick.market || pick.market === 'Fixture only') return false;
     seen.add(fixture.id);
     return true;
-  }).sort((a, b) => b.recommendedSelection.confidenceScore - a.recommendedSelection.confidenceScore);
+  }).sort((a, b) => {
+    const edgeA = a.recommendedSelection.edge;
+    const edgeB = b.recommendedSelection.edge;
+    if (typeof edgeA === 'number' && typeof edgeB === 'number' && edgeA !== edgeB) return edgeB - edgeA;
+    return b.recommendedSelection.confidenceScore - a.recommendedSelection.confidenceScore;
+  });
 }
 
 function combinations(pool, size) {
@@ -66,8 +72,12 @@ export function buildAccumulator(fixtures, sport = 'FOOTBALL', targetOdds = 10, 
       const odds = group.reduce((product, fixture) => product * fixture.recommendedSelection.odds, 1);
       if (odds + 1e-9 < targetOdds) continue;
       const minConfidence = Math.min(...group.map((fixture) => fixture.recommendedSelection.confidenceScore));
-      if (!best || minConfidence > best.minConfidence || (minConfidence === best.minConfidence && odds < best.odds)) {
-        best = { group, odds, minConfidence };
+      const edgeValues = group.map((fixture) => fixture.recommendedSelection.edge).filter((edge) => typeof edge === 'number');
+      const minEdge = edgeValues.length === group.length ? Math.min(...edgeValues) : null;
+      const betterEdge = minEdge != null && (best?.minEdge == null || minEdge > best.minEdge);
+      const sameEdge = (minEdge == null && best?.minEdge == null) || (minEdge != null && best?.minEdge != null && Math.abs(minEdge - best.minEdge) < 1e-9);
+      if (!best || betterEdge || (sameEdge && (minConfidence > best.minConfidence || (minConfidence === best.minConfidence && odds < best.odds)))) {
+        best = { group, odds, minConfidence, minEdge };
       }
     }
     if (best) break;

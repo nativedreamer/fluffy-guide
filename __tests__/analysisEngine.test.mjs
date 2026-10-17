@@ -5,6 +5,7 @@ import { parseSummary } from '../api/lib/samples.js';
 import { projectBookings, projectCorners } from '../api/lib/project.js';
 import { buildAccumulator } from '../api/lib/accumulator.js';
 import { selectFootball } from '../api/lib/select.js';
+import { devig, footballModel, stampEdge, footballQuote } from '../api/lib/edge.js';
 
 function sample(id, homeId, awayId, cornersHome, cornersAway, cardsHome, cardsAway, goals = [2, 1]) {
   return {
@@ -114,7 +115,7 @@ describe('corner and booking projections', () => {
     assert.equal(projection.excluded, false);
     assert.ok(projection.supportedThreshold >= 7.5);
     assert.match(projection.historicalOver75Freq, /\/\d+ \(/);
-    assert.ok(projection.confidenceScore >= 55 && projection.confidenceScore <= 88);
+    assert.ok(projection.confidenceScore >= 55 && projection.confidenceScore <= 90);
     assert.equal(projection.firstHalfProj, undefined);
   });
 
@@ -204,5 +205,43 @@ describe('accumulator filter', () => {
     }, []);
     assert.equal(pick.confidenceScore, 0);
     assert.equal(pick.market, 'Fixture only');
+  });
+
+  test('drops a form pick when the shrunk model does not beat the price', () => {
+    const priced = { homeWin: 1.45, draw: 4.2, awayWin: 6.5 };
+    const fair = devig([priced.homeWin, priced.draw, priced.awayWin]);
+    const model = footballModel(
+      { rows: 8, avgFor: 1.2, avgAgainst: 1.1, homeFor: 1.3, homeAgainst: 1.0, awayFor: 1.0, awayAgainst: 1.2 },
+      { rows: 8, avgFor: 1.3, avgAgainst: 1.2, homeFor: 1.4, homeAgainst: 1.0, awayFor: 1.2, awayAgainst: 1.1 }
+    );
+    const option = {
+      market: 'Match result',
+      pick: 'Alpha win',
+      odds: 1.45,
+      confidenceScore: 80,
+      evidenceGrade: 'A',
+      reasonSummary: 'Form only.'
+    };
+    const stamped = stampEdge(option, footballQuote(option, { homeTeam: 'Alpha', awayTeam: 'Beta' }, model, priced));
+    assert.ok(fair[0] > model.home);
+    assert.equal(stamped._drop, true);
+    const samples = [];
+    for (let i = 0; i < 6; i += 1) {
+      samples.push(sample(`e${i}`, '10', `${80 + i}`, 5, 4, 1, 1, [1, 1]));
+      samples.push(sample(`f${i}`, `${90 + i}`, '20', 4, 5, 1, 1, [1, 1]));
+    }
+    const pick = selectFootball({
+      homeTeam: 'Alpha',
+      awayTeam: 'Beta',
+      homeForm: ['W', 'W', 'W', 'W', 'W'],
+      awayForm: ['L', 'L', 'L', 'L', 'L'],
+      homeRecord: '8-1-1',
+      awayRecord: '1-1-8',
+      homeTeamId: '10',
+      awayTeamId: '20',
+      pricedOdds: priced
+    }, samples);
+    assert.equal(pick.market, 'Fixture only');
+    assert.match(pick.reasonSummary, /does not beat the devigged price/);
   });
 });

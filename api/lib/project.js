@@ -1,5 +1,6 @@
 import { avg, clamp, round2 } from './util.js';
 import { perspective } from './samples.js';
+import { CARD_MODEL_MIN, CORNER_MODEL_MIN, shrink, shrunkRate, sumOver } from './edge.js';
 
 function freq(rows, predicate) {
   if (!rows.length) return null;
@@ -27,10 +28,13 @@ function qualityFor(homeRows, awayRows, homeVenue, awayVenue) {
   return 'Moderate';
 }
 
-function chooseLine(expected, pooled, lines, cushion, minimumRate) {
+function chooseLine(expected, pooled, lines, cushion, minimumRate, modelAt) {
   for (const line of lines) {
     const history = freq(pooled, (row) => row.totalCorners > line);
-    if (expected >= line + cushion && history && history.pct >= minimumRate && history.n >= 8) return { line, history };
+    const modelProb = modelAt ? modelAt(line) : 1;
+    if (expected >= line + cushion && history && history.pct >= minimumRate && history.n >= 8 && modelProb >= CORNER_MODEL_MIN) {
+      return { line, history, modelProb };
+    }
   }
   return null;
 }
@@ -61,11 +65,16 @@ export function projectCorners(samples, homeTeamId, awayTeamId) {
   }
 
   const expected = (homeFor + awayAgainst + awayFor + homeAgainst) / 2;
+  const sampleN = Math.min(homeBase.length, awayBase.length);
+  const lambdaHome = shrunkRate(homeFor, awayAgainst, sampleN, 4.8);
+  const lambdaAway = shrunkRate(awayFor, homeAgainst, sampleN, 4.2);
+  const modelAt = (line) => (lambdaHome != null && lambdaAway != null ? sumOver(lambdaHome, lambdaAway, line) : 0);
   const pooled = [...homeRows, ...awayRows];
-  const supported = chooseLine(expected, pooled, [11.5, 10.5, 9.5, 8.5, 7.5], 0.45, 0.55)
+  const supported = chooseLine(expected, pooled, [11.5, 10.5, 9.5, 8.5, 7.5], 0.45, 0.55, modelAt)
     || (() => {
       const history = freq(pooled, (row) => row.totalCorners > 7.5);
-      if (expected >= 8.3 && history && history.pct >= 0.62) return { line: 7.5, history };
+      const modelProb = modelAt(7.5);
+      if (expected >= 8.3 && history && history.pct >= 0.62 && modelProb >= CORNER_MODEL_MIN) return { line: 7.5, history, modelProb };
       return null;
     })();
 
@@ -79,7 +88,7 @@ export function projectCorners(samples, homeTeamId, awayTeamId) {
       sampleMatches: homeRows.length + awayRows.length,
       combinedCornerAvg: round2(expected),
       historicalOver75Freq: over75?.label || 'Data unavailable',
-      warning: 'Sample does not support Over 7.5 or a higher corner total.'
+      warning: 'History and the shrunk corner model do not both support Over 7.5 or higher.'
     };
   }
 
@@ -88,7 +97,8 @@ export function projectCorners(samples, homeTeamId, awayTeamId) {
   confidence += Math.round(clamp((homeRows.length + awayRows.length - 8) * 0.6, 0, 8));
   confidence += Math.round(clamp((expected - supported.line) * 4, 0, 8));
   confidence += supported.history.pct >= 0.7 ? 6 : 0;
-  confidence = clamp(Math.round(confidence), 55, 88);
+  if (supported.modelProb >= 0.7) confidence += 4;
+  confidence = clamp(Math.round(confidence), 55, 90);
 
   return {
     excluded: false,
@@ -102,8 +112,9 @@ export function projectCorners(samples, homeTeamId, awayTeamId) {
     awayAvgCornersWon: round2(awayFor),
     awayAvgCornersConceded: round2(awayAgainst),
     combinedCornerAvg: round2(expected),
+    modelProbability: round2(supported.modelProb),
     sampleMatches: homeRows.length + awayRows.length,
-    tacticalNotes: `Expected corners ${round2(expected)} from venue-weighted won/conceded splits. First-half corners: Data unavailable. Second-half corners: Data unavailable. ESPN key events do not list corners.`,
+    tacticalNotes: `Expected corners ${round2(expected)} from venue-weighted won/conceded splits. History and the shrunk Poisson model both clear Over ${supported.line} (${Math.round(supported.modelProb * 100)}%). First-half corners: Data unavailable. Second-half corners: Data unavailable.`,
     attackingWidthRating: clamp(Math.round((avg(homeBase, (row) => row.shotsFor) || 0) / 2), 1, 10),
     shotVolumeRating: clamp(Math.round(((avg(homeBase, (row) => row.shotsFor) || 0) + (avg(awayBase, (row) => row.shotsFor) || 0)) / 4), 1, 10),
     dataQuality,
@@ -140,26 +151,31 @@ export function projectBookings(samples, homeTeamId, awayTeamId, refereeName) {
   }
 
   const expected = homeCards + awayCards;
+  const lambdaHome = Math.max(0.3, shrink(homeCards, homeBase.length, 1.9, 5));
+  const lambdaAway = Math.max(0.3, shrink(awayCards, awayBase.length, 1.9, 5));
+  const cardModel = (line) => sumOver(lambdaHome, lambdaAway, line);
   const pooled = [...homeRows, ...awayRows];
   const cardLines = [5.5, 4.5, 3.5];
   let supported = null;
   for (const line of cardLines) {
     const history = freq(pooled, (row) => (row.totalCards ?? -1) > line);
-    if (expected >= line + 0.35 && history && history.pct >= 0.55 && history.n >= 8) {
-      supported = { line, history };
+    const modelProb = cardModel(line);
+    if (expected >= line + 0.35 && history && history.pct >= 0.55 && history.n >= 8 && modelProb >= CARD_MODEL_MIN) {
+      supported = { line, history, modelProb };
       break;
     }
   }
   const baseline = freq(pooled, (row) => (row.totalCards ?? -1) > 3.5);
-  if (!supported && expected >= 4.2 && baseline && baseline.pct >= 0.6) {
-    supported = { line: 3.5, history: baseline };
+  const baselineModel = cardModel(3.5);
+  if (!supported && expected >= 4.2 && baseline && baseline.pct >= 0.6 && baselineModel >= CARD_MODEL_MIN) {
+    supported = { line: 3.5, history: baseline, modelProb: baselineModel };
   }
   if (!supported) {
     return {
       excluded: true,
       dataQuality,
       sampleMatches: homeRows.length + awayRows.length,
-      warning: 'Sample does not support a total-card threshold.'
+      warning: 'History and the shrunk card model do not both support a total-card threshold.'
     };
   }
 
@@ -207,6 +223,7 @@ export function projectBookings(samples, homeTeamId, awayTeamId, refereeName) {
     totalCardProjection: `Over ${supported.line} cards`,
     supportedThreshold: supported.line,
     historicalThresholdFreq: supported.history.label,
+    modelProbability: round2(supported.modelProb),
     firstHalfCardProj,
     secondHalfCardProj,
     homeAvgCards: round2(homeCards),
@@ -216,9 +233,9 @@ export function projectBookings(samples, homeTeamId, awayTeamId, refereeName) {
     referee: referee || undefined,
     rivalryLevel: 'Standard',
     sampleMatches: homeRows.length + awayRows.length,
-    tacticalNotes: refereeName
-      ? `Referee ${referee ? `${referee.name} (${referee.matchesSample} sampled matches)` : `${refereeName} appointed, sample under 5`}. Cards = yellow + red, not booking points.`
-      : 'Referee not confirmed. Cards = yellow + red, not booking points.',
+    tacticalNotes: `${refereeName
+      ? `Referee ${referee ? `${referee.name} (${referee.matchesSample} sampled matches)` : `${refereeName} appointed, sample under 5`}. `
+      : 'Referee not confirmed. '}Cards = yellow + red, not booking points. History and the shrunk card model both clear Over ${supported.line} (${Math.round((supported.modelProb || 0) * 100)}%).`,
     dataQuality,
     confidenceScore: confidence,
     warning: refereeName ? '' : 'Referee appointment is not on the ESPN summary.'

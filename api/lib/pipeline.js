@@ -5,6 +5,7 @@ import { projectBookings, projectCorners } from './project.js';
 import { parseBasketballResult, parseSummary } from './samples.js';
 import { selectBasketball, selectFootball } from './select.js';
 import { buildAccumulator, buildDailyTips, buildWeeklyTips } from './accumulator.js';
+import { backtestGoalModel } from './edge.js';
 import { addDays, dateKey, fetchJson, mapPool, utcDate } from './util.js';
 
 const memory = {
@@ -13,7 +14,9 @@ const memory = {
   fixtures: null,
   dataset: null,
   coverage: [],
-  warnings: []
+  warnings: [],
+  backtest: null,
+  backtestSamples: -1
 };
 
 let pendingBuild = null;
@@ -348,6 +351,11 @@ async function rebuild(safeDays, refresh) {
   memory.dataset = dataset;
   memory.coverage = scoreboard.coverage;
   memory.warnings = scoreboard.warnings.slice(0, 12);
+  const sampleCount = dataset.samples?.length || 0;
+  if (!memory.backtest || memory.backtestSamples !== sampleCount) {
+    memory.backtest = backtestGoalModel(dataset.samples || []);
+    memory.backtestSamples = sampleCount;
+  }
 }
 
 export async function getMatchAnalysis({
@@ -404,6 +412,7 @@ export async function getMatchAnalysis({
     accumulator,
     dailyTips: buildDailyTips(fixtures, sport),
     weeklyTips: buildWeeklyTips(fixtures, sport),
+    edgeModel: memory.backtest,
     signature: 'prompt by mr. Wolf'
   };
 }

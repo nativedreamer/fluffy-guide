@@ -1,5 +1,6 @@
 import { clamp, round2 } from './util.js';
 import { goalProfile } from './project.js';
+import { basketballQuote, basketballRates, footballModel, footballQuote, stampEdge } from './edge.js';
 
 export const MIN_CONFIDENCE = 74;
 export const MIN_ODDS = 1.45;
@@ -114,13 +115,19 @@ export function selectFootball(fixture, samples) {
     }
   }
 
-  const viable = options.filter((option) => option.confidenceScore >= MIN_CONFIDENCE && priceOk(option.odds));
+  const model = footballModel(homeGoals, awayGoals);
+  const edged = model
+    ? options.map((option) => stampEdge(option, footballQuote(option, fixture, model, priced)))
+    : options;
+  const viable = edged.filter((option) => !option._drop && option.confidenceScore >= MIN_CONFIDENCE && priceOk(option.odds));
   if (!viable.length) {
-    return noPick(priced.homeWin
-      ? 'Published odds are on the fixture, but form and boxscore samples do not clear the evidence filter.'
-      : 'No verified odds are published for this fixture.');
+    return noPick(edged.some((option) => option._drop)
+      ? 'Form cleared the evidence filter, but the shrunk model does not beat the devigged price.'
+      : priced.homeWin
+        ? 'Published odds are on the fixture, but form and boxscore samples do not clear the evidence filter.'
+        : 'No verified odds are published for this fixture.');
   }
-  viable.sort((a, b) => b.confidenceScore - a.confidenceScore || a.odds - b.odds);
+  viable.sort((a, b) => (b.edge ?? -1) - (a.edge ?? -1) || b.confidenceScore - a.confidenceScore || a.odds - b.odds);
   return viable[0];
 }
 
@@ -174,8 +181,16 @@ export function selectBasketball(fixture) {
     options.push(candidate('Moneyline', `${fixture.awayTeam} moneyline`, priced.awayWin, 68 + Math.round(((awayRecord?.rate || 0) - (homeRecord?.rate || 0)) * 20) - (fatigue ? 6 : 0), 'Published moneyline. Record sample only, no invented price.'));
   }
 
-  const viable = options.filter((option) => option.confidenceScore >= MIN_CONFIDENCE && priceOk(option.odds));
-  if (!viable.length) return noPick('Basketball schedule and published prices do not clear the evidence filter.');
-  viable.sort((a, b) => b.confidenceScore - a.confidenceScore);
+  const rates = basketballRates(homeLog, awayLog);
+  const edged = rates
+    ? options.map((option) => stampEdge(option, basketballQuote(option, fixture, rates, priced)))
+    : options;
+  const viable = edged.filter((option) => !option._drop && option.confidenceScore >= MIN_CONFIDENCE && priceOk(option.odds));
+  if (!viable.length) {
+    return noPick(edged.some((option) => option._drop)
+      ? 'Recent results cleared the evidence filter, but the shrunk model does not beat the devigged price.'
+      : 'Basketball schedule and published prices do not clear the evidence filter.');
+  }
+  viable.sort((a, b) => (b.edge ?? -1) - (a.edge ?? -1) || b.confidenceScore - a.confidenceScore);
   return viable[0];
 }
