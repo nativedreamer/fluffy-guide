@@ -6,6 +6,7 @@ import { parseBasketballResult, parseSummary } from './samples.js';
 import { selectBasketball, selectFootball } from './select.js';
 import { buildAccumulator, buildDailyTips, buildWeeklyTips } from './accumulator.js';
 import { backtestGoalModel } from './edge.js';
+import { buildStreakTips } from './streaks.js';
 import { addDays, dateKey, fetchJson, mapPool, utcDate } from './util.js';
 
 const memory = {
@@ -395,6 +396,8 @@ export async function getMatchAnalysis({
     .sort((a, b) => b.bookings.confidenceScore - a.bookings.confidenceScore)
     .slice(0, 20);
   const accumulator = buildAccumulator(fixtures, sport, Number(targetOdds) || 10);
+  // Upgrade: one-sided form streak tips for today's CAT league games only (does not alter existing flow)
+  const streakTips = buildStreakTips(fixtures);
   return {
     fetchedAt: new Date(memory.at || Date.now()).toISOString(),
     source: 'ESPN scoreboard, summary boxscore, and stored corner/booking samples',
@@ -412,6 +415,7 @@ export async function getMatchAnalysis({
     accumulator,
     dailyTips: buildDailyTips(fixtures, sport),
     weeklyTips: buildWeeklyTips(fixtures, sport),
+    streakTips,
     edgeModel: memory.backtest,
     signature: 'prompt by mr. Wolf'
   };
