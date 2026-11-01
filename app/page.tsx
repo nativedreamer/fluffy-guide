@@ -28,6 +28,7 @@ import { LetsGoModal } from '../components/LetsGoModal';
 import { BetSlipDrawer } from '../components/BetSlipDrawer';
 import { PwaInstallBanner } from '../components/PwaInstallBanner';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { StreakTipsSection, StreakTipRow } from '../components/StreakTipsSection';
 
 import { 
   Flame, 
@@ -47,6 +48,7 @@ export default function App() {
   const [fixtures, setFixtures] = useState<MatchFixture[]>([]);
   const [dailyTips, setDailyTips] = useState<DailyTipGroup[]>([]);
   const [weeklyTips, setWeeklyTips] = useState<WeeklyTipGroup[]>([]);
+  const [streakTips, setStreakTips] = useState<StreakTipRow[]>([]);
   const [coverage, setCoverage] = useState('');
   const [activeTab, setActiveTab] = useState<AnalysisCategory | 'ALL_FIXTURES'>('ALL_FIXTURES');
   const [fixturesLoading, setFixturesLoading] = useState(true);
@@ -56,7 +58,6 @@ export default function App() {
   const [selectedSport, setSelectedSport] = useState<SportType>('FOOTBALL');
   const [targetOdds, setTargetOdds] = useState<number>(10.0);
 
-  // Active Accumulator Slip
   const [slip, setSlip] = useState<AccumulatorSlip>(() => {
     return generateAccumulatorSlip('FOOTBALL', 10.0, []);
   });
@@ -74,12 +75,14 @@ export default function App() {
       setSlip(nextSlip);
       setDailyTips(payload.dailyTips || []);
       setWeeklyTips(payload.weeklyTips || []);
+      setStreakTips(Array.isArray(payload.streakTips) ? payload.streakTips : []);
       setCoverage(`${(payload.coverage || []).slice(0, 8).join(', ') || 'ESPN'} · ${payload.dataset?.samples || 0} boxscores`);
       setAnalysisMessage(nextSlip.meetsTarget ? null : nextSlip.riskNote || "I couldn't identify enough sufficiently supported selections to construct a 10+ odds accumulator within the 7-selection limit.");
     } catch (error) {
       setFixtures([]);
       setDailyTips([]);
       setWeeklyTips([]);
+      setStreakTips([]);
       setFixturesError(error instanceof Error ? error.message : 'Match analysis unavailable');
       setAnalysisMessage("I couldn't identify enough sufficiently supported selections to construct a 10+ odds accumulator within the 7-selection limit.");
     } finally {
@@ -91,20 +94,16 @@ export default function App() {
     loadAnalysis('FOOTBALL', 10);
   }, []);
 
-  // Modals state
   const [isLetsGoOpen, setIsLetsGoOpen] = useState(false);
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [isCopiedFromDrawer, setIsCopiedFromDrawer] = useState(false);
 
-  // PWA install hook
   const { isInstallable, isOffline, promptInstall } = usePWAInstall();
 
-  // Selected fixture detail
   const selectedFixture = selectedMatchId
     ? fixtures.find((f) => f.id === selectedMatchId) || null
     : null;
 
-  // Handle running analysis from "LET'S GO" workflow
   const handleRunAnalysis = (sport: SportType, target: number) => {
     setSelectedSport(sport);
     setTargetOdds(target);
@@ -112,12 +111,10 @@ export default function App() {
     loadAnalysis(sport, target);
   };
 
-  // Re-generate accumulator
   const handleRegenerate = () => {
     loadAnalysis(selectedSport, targetOdds);
   };
 
-  // Load a curated Daily Tip bundle directly into active slip
   const handleLoadDailyTip = (dailyTip: DailyTipGroup) => {
     setSlip({
       ...slip,
@@ -129,7 +126,6 @@ export default function App() {
     setActiveTab('ACCUMULATOR');
   };
 
-  // Load a curated Weekly Tip bundle directly into active slip
   const handleLoadWeeklyTip = (weeklyTip: WeeklyTipGroup) => {
     setSlip({
       ...slip,
@@ -141,7 +137,6 @@ export default function App() {
     setActiveTab('ACCUMULATOR');
   };
 
-  // Add fixture pick to slip manually
   const handleAddToSlip = (fix: MatchFixture) => {
     if (slip.selections.some((s) => s.matchId === fix.id)) return;
 
@@ -170,7 +165,6 @@ export default function App() {
     });
   };
 
-  // Remove selection from slip
   const handleRemoveSelection = (id: string) => {
     const updated = slip.selections.filter((s) => s.id !== id);
     const newOdds = +(updated.reduce((acc, curr) => acc * curr.odds, 1.0)).toFixed(2);
@@ -182,7 +176,6 @@ export default function App() {
     });
   };
 
-  // Clear slip
   const handleClearSlip = () => {
     setSlip({
       ...slip,
@@ -202,7 +195,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#04160e] text-slate-100 flex flex-col font-sans pb-24 selection:bg-emerald-500/30 selection:text-emerald-200">
-      {/* Header */}
       <Header
         oddsFormat={oddsFormat}
         onSelectOddsFormat={setOddsFormat}
@@ -217,14 +209,12 @@ export default function App() {
         }}
       />
 
-      {/* Navigation Tabs */}
       <CategoryTabs
         activeTab={activeTab}
         onSelectTab={setActiveTab}
         accumulatorCount={slip.selections.length}
       />
 
-      {/* Main Container */}
       <main className="max-w-7xl w-full mx-auto px-3 sm:px-6 py-5 space-y-6 flex-1">
         {fixturesLoading && (
           <div className="rounded-xl border border-emerald-800 bg-[#051c13] px-4 py-3 text-xs font-mono text-emerald-200">
@@ -236,7 +226,7 @@ export default function App() {
             Live match analysis unavailable. No cached or invented fixtures are shown.
           </div>
         )}
-        {/* Hero Quick Command Banner */}
+
         <div className="bg-gradient-to-r from-[#072418] via-[#0d3b2a] to-[#072418] border border-emerald-700/80 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-xl bg-amber-500/20 border border-amber-400/50 flex items-center justify-center shrink-0">
@@ -271,19 +261,23 @@ export default function App() {
           </div>
         </div>
 
-        {/* Tab 1: Daily Tips & Bankers */}
         {activeTab === 'DAILY_TIPS' && (
           <ErrorBoundary>
-            <DailyTipsSection
-              oddsFormat={oddsFormat}
-              tips={dailyTips}
-              onLoadIntoActiveSlip={handleLoadDailyTip}
-              onSelectMatchDetail={setSelectedMatchId}
-            />
+            <div className="space-y-8">
+              <StreakTipsSection
+                tips={streakTips}
+                onSelectMatchDetail={setSelectedMatchId}
+              />
+              <DailyTipsSection
+                oddsFormat={oddsFormat}
+                tips={dailyTips}
+                onLoadIntoActiveSlip={handleLoadDailyTip}
+                onSelectMatchDetail={setSelectedMatchId}
+              />
+            </div>
           </ErrorBoundary>
         )}
 
-        {/* Tab 2: Weekly & Weekend Slates */}
         {activeTab === 'WEEKLY_TIPS' && (
           <ErrorBoundary>
             <WeeklyTipsSection
@@ -295,7 +289,6 @@ export default function App() {
           </ErrorBoundary>
         )}
 
-        {/* Tab 3: 10.00+ Target Odds Accumulator */}
         {activeTab === 'ACCUMULATOR' && (
           <ErrorBoundary>
             <div className="space-y-6">
@@ -314,7 +307,6 @@ export default function App() {
                 onSelectMatchDetail={setSelectedMatchId}
               />
 
-              {/* Operating Principle Callout Card */}
               <div className="bg-[#051c13] border border-emerald-800/80 rounded-2xl p-4 sm:p-5 text-xs font-mono space-y-2">
                 <div className="flex items-center gap-2 text-amber-400 font-bold uppercase tracking-wider text-xs">
                   <ShieldCheck className="w-4 h-4" />
@@ -339,7 +331,6 @@ export default function App() {
           </ErrorBoundary>
         )}
 
-        {/* Tab 4: Corners Analysis */}
         {activeTab === 'CORNERS' && (
           <ErrorBoundary>
             <CornersTable
@@ -350,7 +341,6 @@ export default function App() {
           </ErrorBoundary>
         )}
 
-        {/* Tab 5: Bookings Analysis */}
         {activeTab === 'BOOKINGS' && (
           <ErrorBoundary>
             <BookingsTable
@@ -361,7 +351,6 @@ export default function App() {
           </ErrorBoundary>
         )}
 
-        {/* Tab 6: Dual Corners and Bookings (Section 10) */}
         {activeTab === 'BOTH_CORNERS_BOOKINGS' && (
           <ErrorBoundary>
             <div className="space-y-6">
@@ -377,14 +366,12 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Corners Section */}
               <CornersTable
                 fixtures={fixtures}
                 coverage={coverage}
                 onSelectMatchDetail={setSelectedMatchId}
               />
 
-              {/* Bookings Section */}
               <BookingsTable
                 fixtures={fixtures}
                 coverage={coverage}
@@ -394,7 +381,6 @@ export default function App() {
           </ErrorBoundary>
         )}
 
-        {/* Tab 7: All Real Live Fixtures */}
         {activeTab === 'ALL_FIXTURES' && (
           <ErrorBoundary>
             <AllFixturesList
@@ -408,7 +394,6 @@ export default function App() {
         )}
       </main>
 
-      {/* Interactive Modal Workflows */}
       <LetsGoModal
         isOpen={isLetsGoOpen}
         onClose={() => setIsLetsGoOpen(false)}
@@ -423,7 +408,6 @@ export default function App() {
         isAlreadyInSlip={selectedFixture ? slip.selections.some((s) => s.matchId === selectedFixture.id) : false}
       />
 
-      {/* Floating BetSlip Drawer */}
       <BetSlipDrawer
         selections={slip.selections}
         onRemoveSelection={handleRemoveSelection}
@@ -433,7 +417,6 @@ export default function App() {
         isCopied={isCopiedFromDrawer}
       />
 
-      {/* PWA Install Banner */}
       <PwaInstallBanner
         isInstallable={isInstallable}
         onInstall={promptInstall}
