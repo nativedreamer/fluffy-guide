@@ -6,7 +6,6 @@ import { parseBasketballResult, parseSummary } from './samples.js';
 import { selectBasketball, selectFootball } from './select.js';
 import { buildAccumulator, buildDailyTips, buildWeeklyTips } from './accumulator.js';
 import { backtestGoalModel } from './edge.js';
-import { buildStreakTips } from './streaks.js';
 import { addDays, dateKey, fetchJson, mapPool, utcDate } from './util.js';
 
 const memory = {
@@ -22,6 +21,8 @@ const memory = {
 
 let pendingBuild = null;
 let pendingKey = '';
+
+const CUP_LEAGUE_CODES = new Set(['uefa.champions', 'uefa.europa', 'uefa.europa.conf']);
 
 function numberEnv(name, fallback) {
   const value = Number(process.env[name]);
@@ -56,6 +57,149 @@ function isLowStakes(event, sport) {
   if (/preseason|exhibition|all-star|all star/i.test(blob)) return true;
   if (sport === 'basketball' && Number(event?.season?.type) === 1) return true;
   return false;
+}
+
+function streakStats(marks) {
+  const last = (Array.isArray(marks) ? marks : []).slice(-5).map((m) => String(m || '').toUpperCase());
+  const wins = last.filter((m) => m === 'W').length;
+  const losses = last.filter((m) => m === 'L').length;
+  const strongWin = wins >= 4;
+  const strongLoss = losses >= 4;
+  let label = null;
+  if (wins === 5) label = '5/5 wins';
+  else if (wins === 4) label = '4/5 wins';
+  else if (losses === 5) label = '5/5 losses';
+  else if (losses === 4) label = '4/5 losses';
+  return { wins, losses, strongWin, strongLoss, label, form: last.join('') || '-----' };
+}
+
+function isLeagueOnlyFootball(fixture) {
+  if (!fixture || fixture.sport !== 'Football') return false;
+  if (fixture.lowStakes) return false;
+  const code = String(fixture.leagueCode || '').toLowerCase();
+  if (CUP_LEAGUE_CODES.has(code)) return false;
+  const blob = `${fixture.league || ''} ${fixture.country || ''}`.toLowerCase();
+  if (/women|wnba|youth|u19|u20|u21|u23|cup|trophy|play-?off/i.test(blob) && !/league|liga|serie|premier|bundes|eredivisie|primeira|championship|allsvenskan|superliga|mls|brasileirao/i.test(blob)) {
+    return false;
+  }
+  return true;
+}
+
+function catDateKey(iso) {
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Africa/Johannesburg',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date(iso));
+  } catch {
+    return null;
+  }
+}
+
+function catTime(iso) {
+  try {
+    return new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Africa/Johannesburg',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).format(new Date(iso));
+  } catch {
+    return '—';
+  }
+}
+
+function buildStreakTipText(home, away, streakType, advantage) {
+  if (streakType.startsWith('WVL')) {
+    if (advantage === 'HOME') return 'Home in strong winning run vs Away in heavy losing run — lean Home win or Home DNB.';
+    return 'Away in strong winning run vs Home in heavy losing run — lean Away win or Away DNB.';
+  }
+  if (streakType.includes('wins')) {
+    if (advantage === 'HOME') return 'Home 4/5+ wins streak — lean Home or Home DNB while form holds.';
+    if (advantage === 'AWAY') return 'Away 4/5+ wins streak — lean Away or Away DNB while form holds.';
+    return 'Both sides showing winning streaks — treat carefully; consider under or draw angles.';
+  }
+  if (streakType.includes('losses')) {
+    if (advantage === 'HOME') return 'Away on 4/5+ losses — lean Home or Home DNB.';
+    if (advantage === 'AWAY') return 'Home on 4/5+ losses — lean Away or Away DNB.';
+    return 'Both sides on heavy losing runs — high variance; avoid heavy favourites.';
+  }
+  return 'One-sided form edge present — check price before acting.';
+}
+
+function buildCounterTipText(home, away) {
+  if (home.strongWin && away.strongWin) {
+    return 'Counter: both sides on winning streaks — momentum collision; consider draw or under goals.';
+  }
+  if (home.strongLoss && away.strongLoss) {
+    return 'Counter: both sides on losing streaks — avoid strong fav; lean under or double chance.';
+  }
+  return null;
+}
+
+/** Today CAT league games with 4/5 or 5/5 W or L (or WVL). Inlined to avoid extra api files. */
+function buildStreakTips(fixtures = []) {
+  const today = catDateKey(new Date().toISOString());
+  if (!today) return [];
+  const rows = [];
+  for (const fixture of fixtures) {
+    if (!isLeagueOnlyFootball(fixture)) continue;
+    const kick = fixture.kickoffAt || fixture.date;
+    if (!kick || catDateKey(kick) !== today) continue;
+    const home = streakStats(fixture.homeForm);
+    const away = streakStats(fixture.awayForm);
+    if (!home.strongWin && !home.strongLoss && !away.strongWin && !away.strongLoss) continue;
+
+    let streakType = '';
+    let advantage = 'NONE';
+    if ((home.strongWin && away.strongLoss) || (away.strongWin && home.strongLoss)) {
+      const winSide = home.strongWin ? home : away;
+      const lossSide = home.strongLoss ? home : away;
+      streakType = `WVL ${winSide.label} vs ${lossSide.label}`;
+      advantage = home.strongWin && away.strongLoss ? 'HOME' : 'AWAY';
+    } else if (home.strongWin || away.strongWin) {
+      const side = home.strongWin ? home : away;
+      streakType = side.label || '4/5+ wins';
+      advantage = home.strongWin && away.strongWin ? 'BOTH' : home.strongWin ? 'HOME' : 'AWAY';
+    } else {
+      const side = home.strongLoss ? home : away;
+      streakType = side.label || '4/5+ losses';
+      if (home.strongLoss && !away.strongLoss) advantage = 'AWAY';
+      else if (away.strongLoss && !home.strongLoss) advantage = 'HOME';
+      else advantage = 'BOTH';
+    }
+
+    const tip = buildStreakTipText(home, away, streakType, advantage);
+    const counterTip = (home.strongWin && away.strongWin) || (home.strongLoss && away.strongLoss)
+      ? buildCounterTipText(home, away)
+      : null;
+
+    rows.push({
+      id: `streak-${fixture.id}`,
+      matchId: fixture.id,
+      timeCAT: `${catTime(kick)} CAT`,
+      kickoffAt: fixture.kickoffAt,
+      league: fixture.league,
+      country: fixture.country,
+      homeTeam: fixture.homeTeam,
+      awayTeam: fixture.awayTeam,
+      homeForm: home.form,
+      awayForm: away.form,
+      homeWins: home.wins,
+      homeLosses: home.losses,
+      awayWins: away.wins,
+      awayLosses: away.losses,
+      streakType,
+      advantage,
+      tip,
+      counterTip: counterTip || undefined,
+      odds: fixture.odds || null
+    });
+  }
+  rows.sort((a, b) => String(a.kickoffAt || '').localeCompare(String(b.kickoffAt || '')));
+  return rows;
 }
 
 function toFixture(event, competition, now, today) {
@@ -212,7 +356,7 @@ async function collectSamples(fixtures, dataset, limits) {
       const schedule = await fetchJson(`https://site.api.espn.com/apis/site/v2/sports/soccer/${league}/teams/${teamId}/schedule`);
       for (const row of completedScheduleIds(schedule, league)) remember({ ...row, teamId });
     } catch {
-      /* Team schedule is optional. Last-five games on the match summary are the fallback. */
+      /* optional */
     }
   });
 
@@ -240,12 +384,11 @@ async function collectSamples(fixtures, dataset, limits) {
         }
       }
     } catch {
-      /* A missing preview must not invent a sample. */
+      /* optional */
     }
   });
 
   const batch = balancedEvents(wanted, limits.events);
-
   const parsed = await mapPool(batch, 4, async ({ eventId, league }) => {
     try {
       const summary = await fetchJson(
@@ -268,7 +411,7 @@ async function attachBasketballLogs(fixtures) {
     if (fixture.awayTeamId) teams.set(`${fixture.sportPath}:${fixture.leagueCode}:${fixture.awayTeamId}`, fixture);
   }
   const logs = new Map();
-  await mapPool([...teams.entries()].slice(0, 36), 4, async ([key, fixture]) => {
+  await mapPool([...teams.entries()].slice(0, 36), 4, async ([key]) => {
     const [, league, teamId] = key.split(':');
     const sportPath = key.split(':')[0];
     try {
@@ -279,11 +422,8 @@ async function attachBasketballLogs(fixtures) {
         .sort((a, b) => b.date.localeCompare(a.date))
         .slice(0, 8);
       logs.set(key, recent);
-      const marks = recent.slice(0, 5).reverse().map((row) => (row.win ? 'W' : 'L'));
-      return { teamId, marks };
     } catch {
       logs.set(key, []);
-      return null;
     }
   });
 
@@ -396,7 +536,6 @@ export async function getMatchAnalysis({
     .sort((a, b) => b.bookings.confidenceScore - a.bookings.confidenceScore)
     .slice(0, 20);
   const accumulator = buildAccumulator(fixtures, sport, Number(targetOdds) || 10);
-  // Upgrade: one-sided form streak tips for today's CAT league games only (does not alter existing flow)
   const streakTips = buildStreakTips(fixtures);
   return {
     fetchedAt: new Date(memory.at || Date.now()).toISOString(),
