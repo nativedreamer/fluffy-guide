@@ -15,6 +15,10 @@
     "api/fixtures.js": {
       "maxDuration": 60,
       "includeFiles": "data/corner-booking-samples.json"
+    },
+    "api/streaks.js": {
+      "maxDuration": 60,
+      "includeFiles": "data/corner-booking-samples.json"
     }
   }
 }
