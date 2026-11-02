@@ -10,11 +10,11 @@
   "functions": {
     "api/analysis.js": {
       "maxDuration": 60,
-      "includeFiles": "data/corner-booking-samples.json"
+      "includeFiles": "data/corner-booking-samples.json,server/sofascore.js"
     },
     "api/fixtures.js": {
       "maxDuration": 60,
-      "includeFiles": "data/corner-booking-samples.json"
+      "includeFiles": "data/corner-booking-samples.json,server/sofascore.js"
     }
   }
 }
