@@ -6,6 +6,7 @@ import { parseBasketballResult, parseSummary } from './samples.js';
 import { selectBasketball, selectFootball } from './select.js';
 import { buildAccumulator, buildDailyTips, buildWeeklyTips } from './accumulator.js';
 import { backtestGoalModel } from './edge.js';
+import { collectSofaFallback, enrichFixturesFromSofa } from './sofascore.js';
 import { addDays, dateKey, fetchJson, mapPool, utcDate } from './util.js';
 
 const memory = {
@@ -139,7 +140,6 @@ function buildCounterTipText(home, away) {
   return null;
 }
 
-/** Today CAT league games with 4/5 or 5/5 W or L (or WVL). Inlined to avoid extra api files. */
 function buildStreakTips(fixtures = []) {
   const today = catDateKey(new Date().toISOString());
   if (!today) return [];
@@ -484,6 +484,28 @@ async function rebuild(safeDays, refresh) {
     dataset = mergeSamples(dataset, incoming);
     await saveDataset(dataset);
   }
+
+  // SofaScore fallback: only when ESPN samples are still thin for upcoming teams
+  try {
+    const sofaIncoming = await collectSofaFallback(scoreboard.fixtures, dataset, {
+      teamCap: numberEnv('SOFA_TEAM_CAP', refresh ? 12 : 8),
+      eventsPerTeam: numberEnv('SOFA_EVENTS_PER_TEAM', 4)
+    });
+    if (sofaIncoming.length) {
+      dataset = mergeSamples(dataset, sofaIncoming);
+      await saveDataset(dataset);
+      scoreboard.warnings.push(`SofaScore filled ${sofaIncoming.length} boxscore sample(s) where ESPN was thin.`);
+    }
+  } catch (error) {
+    scoreboard.warnings.push(`SofaScore fallback skipped: ${error?.message || 'unavailable'}`);
+  }
+
+  try {
+    await enrichFixturesFromSofa(scoreboard.fixtures, { cap: numberEnv('SOFA_ENRICH_CAP', 12) });
+  } catch {
+    /* enrichment is optional */
+  }
+
   await attachBasketballLogs(scoreboard.fixtures);
   applyModels(scoreboard.fixtures, dataset);
   memory.at = Date.now();
@@ -539,7 +561,7 @@ export async function getMatchAnalysis({
   const streakTips = buildStreakTips(fixtures);
   return {
     fetchedAt: new Date(memory.at || Date.now()).toISOString(),
-    source: 'ESPN scoreboard, summary boxscore, and stored corner/booking samples',
+    source: 'ESPN scoreboard + boxscores, with SofaScore fallback when ESPN stats are missing',
     coverage: memory.coverage,
     warnings: memory.warnings,
     windowDays: safeDays,
