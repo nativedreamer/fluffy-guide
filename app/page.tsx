@@ -193,8 +193,11 @@ export default function App() {
     });
   };
 
+  const liveCount = fixtures.filter((fixture) => fixture.status === 'LIVE').length;
+  const verifiedCount = fixtures.filter((fixture) => fixture.recommendedSelection.confidenceScore >= 60).length;
+
   return (
-    <div className="min-h-screen bg-[#04160e] text-slate-100 flex flex-col font-sans pb-24 selection:bg-emerald-500/30 selection:text-emerald-200">
+    <div className="min-h-screen bg-[#07110f] text-slate-100 flex flex-col pb-28 selection:bg-emerald-500/30 selection:text-emerald-200">
       <Header
         oddsFormat={oddsFormat}
         onSelectOddsFormat={setOddsFormat}
@@ -215,7 +218,25 @@ export default function App() {
         accumulatorCount={slip.selections.length}
       />
 
-      <main className="max-w-7xl w-full mx-auto px-3 sm:px-6 py-5 space-y-6 flex-1">
+      <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-7 px-4 py-6 sm:px-7 sm:py-8 lg:px-10">
+        <section className="relative overflow-hidden rounded-[30px] border border-white/10 bg-gradient-to-br from-[#18372c] via-[#10251e] to-[#0c1a17] p-5 shadow-[0_28px_90px_rgba(0,0,0,.22)] sm:p-8 lg:p-10">
+          <div className="pointer-events-none absolute -right-24 -top-32 h-80 w-80 rounded-full bg-[#b9f6d0]/10 blur-3xl" />
+          <div className="relative grid gap-8 lg:grid-cols-[1.2fr_.8fr] lg:items-end">
+            <div>
+              <div className="mb-4 flex flex-wrap items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#b9f6d0]"><span className="live-pulse h-2 w-2 rounded-full bg-[#67e69a]" />{isOffline ? 'Cached radar' : 'Live radar'}<span className="text-white/25">/</span><span className="text-[#9bb3a8]">Verified evidence only</span></div>
+              <h2 className="max-w-2xl text-3xl font-semibold leading-[1.02] tracking-[-0.055em] text-white sm:text-5xl">Read the slate<br /><span className="text-[#b9f6d0]">before you place a leg.</span></h2>
+              <p className="mt-5 max-w-xl text-sm leading-6 text-[#b7c9bf] sm:text-base">A quieter way to move through upcoming fixtures, understand the signal, and build an accumulator without losing the thread.</p>
+              <div className="mt-7 flex flex-wrap items-center gap-3"><button onClick={() => setActiveTab('ALL_FIXTURES')} className="pressable rounded-full bg-white px-5 py-3 text-sm font-semibold text-[#0b1715] hover:bg-[#b9f6d0]">Explore the slate</button><button onClick={() => setIsLetsGoOpen(true)} className="pressable rounded-full border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10">Build an accumulator <span className="ml-1 text-[#ffd38a]">→</span></button></div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2">
+              <div className="rounded-2xl border border-white/10 bg-black/15 p-4"><span className="text-[10px] uppercase tracking-[0.14em] text-[#9bb3a8]">Fixtures</span><strong className="mt-2 block text-2xl font-semibold tabular-nums text-white">{fixtures.length || '—'}</strong><span className="mt-1 block text-[11px] text-[#9bb3a8]">next six days</span></div>
+              <div className="rounded-2xl border border-white/10 bg-black/15 p-4"><span className="text-[10px] uppercase tracking-[0.14em] text-[#9bb3a8]">Live now</span><strong className="mt-2 block text-2xl font-semibold tabular-nums text-[#b9f6d0]">{liveCount || '—'}</strong><span className="mt-1 block text-[11px] text-[#9bb3a8]">on the feed</span></div>
+              <div className="rounded-2xl border border-white/10 bg-black/15 p-4"><span className="text-[10px] uppercase tracking-[0.14em] text-[#9bb3a8]">Signal</span><strong className="mt-2 block text-2xl font-semibold tabular-nums text-white">{verifiedCount || '—'}</strong><span className="mt-1 block text-[11px] text-[#9bb3a8]">evidence-filtered</span></div>
+              <div className="rounded-2xl border border-white/10 bg-black/15 p-4"><span className="text-[10px] uppercase tracking-[0.14em] text-[#9bb3a8]">Slip</span><strong className="mt-2 block text-2xl font-semibold tabular-nums text-[#ffd38a]">{slip.combinedOdds > 1 ? slip.combinedOdds.toFixed(2) : '—'}</strong><span className="mt-1 block text-[11px] text-[#9bb3a8]">combined odds</span></div>
+            </div>
+          </div>
+        </section>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/8 bg-white/[.025] px-4 py-3 text-xs text-[#9bb3a8]"><span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-[#67e69a]" />Analysis is grounded in current fixtures and historical boxscore samples.</span><span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#b9f6d0]">{coverage || 'Waiting for the feed'}</span></div>
         {fixturesLoading && (
           <div className="rounded-xl border border-emerald-800 bg-[#051c13] px-4 py-3 text-xs font-mono text-emerald-200">
             Loading upcoming fixtures and ESPN boxscore samples…
@@ -227,36 +248,36 @@ export default function App() {
           </div>
         )}
 
-        <div className="bg-gradient-to-r from-[#072418] via-[#0d3b2a] to-[#072418] border border-emerald-700/80 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="glass-surface flex flex-col items-center justify-between gap-4 rounded-2xl p-4 sm:flex-row sm:p-5">
           <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-xl bg-amber-500/20 border border-amber-400/50 flex items-center justify-center shrink-0">
-              <Flame className="w-6 h-6 text-amber-400 fill-amber-400 animate-pulse" />
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#ffd38a]/25 bg-[#ffd38a]/10">
+              <Flame className="h-5 w-5 fill-[#ffd38a] text-[#ffd38a]" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-mono font-bold text-amber-400 uppercase tracking-widest">
-                  LIVE QUANT ACCUMULATOR ENGINE
+                  YOUR NEXT DECISION
                 </span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-700 font-mono">
-                  Live Fixtures · Verified Feed
+                  {fixtures.length ? 'Feed ready' : 'Preparing feed'}
                 </span>
               </div>
-              <h2 className="text-base sm:text-lg font-black text-white font-sans mt-0.5">
-                Ready for Evidence-Based Accumulator &amp; Match Analysis?
+              <h2 className="mt-0.5 text-base font-semibold text-white sm:text-lg">
+                Turn the live slate into a considered shortlist.
               </h2>
-              <p className="text-xs text-emerald-200/80 font-mono mt-0.5">
-                Upcoming fixtures only — ESPN scoreboard prices plus corner and card boxscores.
+              <p className="mt-0.5 text-xs text-[#9bb3a8]">
+                Upcoming fixtures only — current prices, corner history, and card boxscores.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
+          <div className="flex w-full shrink-0 items-center gap-2 sm:w-auto">
             <button
               onClick={() => setIsLetsGoOpen(true)}
-              className="w-full md:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer font-sans"
+              className="pressable flex w-full items-center justify-center gap-2 rounded-full bg-[#ffd38a] px-5 py-2.5 text-sm font-semibold text-[#0b1715] shadow-[0_8px_24px_rgba(255,211,138,.12)] hover:bg-white sm:w-auto"
             >
-              <Flame className="w-4 h-4 text-slate-950 fill-slate-950" />
-              LET&apos;S GO
+              <Flame className="h-4 w-4 fill-[#0b1715] text-[#0b1715]" />
+              Open analysis
             </button>
           </div>
         </div>

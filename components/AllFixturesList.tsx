@@ -56,7 +56,7 @@ export const AllFixturesList: React.FC<AllFixturesListProps> = ({
   }, [fixtures, selectedSportFilter, selectedDayFilter, selectedDateFilter, selectedTimeFilter, selectedLeagueFilter, searchQuery]);
 
   return (
-    <div className="bg-[#08261b] border border-emerald-700/70 rounded-2xl shadow-xl overflow-hidden font-sans space-y-4 p-4 sm:p-6">
+    <div className="glass-surface rounded-[26px] overflow-hidden font-sans space-y-4 p-4 sm:p-6">
       {/* Search and Filters Bar */}
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
         {/* Search Input */}
@@ -155,7 +155,7 @@ export const AllFixturesList: React.FC<AllFixturesListProps> = ({
             <div
               key={fix.id}
               onClick={() => onSelectMatchDetail(fix.id)}
-              className="bg-[#051c13] border border-emerald-900/90 hover:border-emerald-700/80 rounded-xl p-4 transition-all hover:bg-[#072418] cursor-pointer group flex flex-col justify-between gap-3"
+              className="pressable border border-white/8 bg-black/15 hover:border-[#b9f6d0]/25 rounded-2xl p-4 cursor-pointer group flex flex-col justify-between gap-3"
             >
               <div>
                 {/* League & Kickoff Time / Live Status */}

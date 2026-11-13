@@ -54,7 +54,7 @@ export const AccumulatorCard: React.FC<AccumulatorCardProps> = ({
   };
 
   return (
-    <div className="bg-[#08261b] border border-emerald-700/70 rounded-2xl shadow-xl overflow-hidden font-sans">
+    <div className="glass-surface rounded-[26px] overflow-hidden font-sans">
       {/* Top Banner: Sports Brand Header */}
       <div className="bg-gradient-to-r from-[#051c13] via-[#092e1f] to-[#051c13] px-4 sm:px-6 py-4 border-b border-emerald-800/80 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
